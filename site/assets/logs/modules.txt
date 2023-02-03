@@ -26,3 +26,8 @@
 2023-02-03 09:53:39	?	?	Found 2 module(s) missing file: FieldtypeNumber => C:/Dropbox/laragon/www/pwx/site/modules/FieldtypeNumber/FieldtypeNumber.module, ProcessPage => C:/Dropbox/laragon/www/pwx/site/modules/ProcessPage/ProcessPage.module
 2023-02-03 09:53:39	?	?	Saved module info caches
 2023-02-03 09:53:39	?	?	Found 2 module(s) missing file: FieldtypeNumber => C:/Dropbox/laragon/www/pwx/site/modules/FieldtypeNumber/FieldtypeNumber.module, ProcessPage => C:/Dropbox/laragon/www/pwx/site/modules/ProcessPage/ProcessPage.module
+2023-02-03 12:12:29	admin	http://pwx.local/processwire/module/?reset=1	Saved module info caches
+2023-02-03 12:12:53	admin	http://pwx.local/processwire/module/	Installed module 'MagicPages'
+2023-02-03 12:12:53	admin	http://pwx.local/processwire/module/	Installed module 'RockMigrations'
+2023-02-03 12:12:53	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-03 12:12:54	admin	http://pwx.local/processwire/module/edit?name=RockMigrations	Saved module info caches
