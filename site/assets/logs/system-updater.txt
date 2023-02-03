@@ -35,3 +35,9 @@
 2023-02-03 09:53:39	Update #17: Completed!
 2023-02-03 09:53:40	Update #18: Initializing update
 2023-02-03 09:53:40	Update #18: Completed!
+2023-02-03 11:37:58	Update #19: Initializing update
+2023-02-03 11:37:58	Update #19: Removed 3 redundant modules table entries
+2023-02-03 11:37:58	Update #19: Completed!
+2023-02-03 11:37:59	Update #20: Initializing update
+2023-02-03 11:37:59	Update #20: Updated 29 page(s) for correct created_users_id
+2023-02-03 11:37:59	Update #20: Completed!
