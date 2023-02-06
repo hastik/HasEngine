@@ -124,6 +124,6 @@ $config->httpHosts = array('pwx.local', 'pwx2.local');
  * Should be true for development sites and false for live/production sites. 
  * 
  */
-$config->debug = false;
+$config->debug = true;
 $config->moduleInstall('download', true);
 

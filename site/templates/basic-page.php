@@ -11,37 +11,19 @@
 <div id="content" style = "border: 3px dashed black; padding: 2rem;">
 	Basic page content <br>
 
-	<?php var_dump($page); ?>
+	<?php bd($page); ?>
 
-	<?php if($page->get("_urlSegments")): ?>
 		
-		<?php foreach($page->get("_urlSegments") as $segment): ?>
-			<?=$segment?>,
-		<?php endforeach; ?>
+	<?php foreach($page->get("_hasUrlSegments") as $segment): ?>
+		<?=$segment?>,
+	<?php endforeach; ?>
 
-	<?php else: ?>
-
-		<?php foreach($input->urlSegments() as $segment): ?>
-			<?=$segment?>,
-		<?php endforeach; ?>
-
-	<?php endif; ?>
 			<br>
+			
+	<?php foreach($page->get("_hasGet") as $key => $value ): ?>
+		<?=$key?> = <?=$value?>,
+	<?php endforeach; ?>
 
-	<?php if($page->get("_get")): ?>
-		
-		<?php foreach($page->get("_get") as $key => $value ): ?>
-			<?=$key?> = <?=$value?>,
-		<?php endforeach; ?>
-
-	<?php else: ?>
-
-		<?php foreach($input->get() as $key => $value): ?>
-			<?=$key?> = <?=$value?>,
-		<?php endforeach; ?>
-
-	<?php endif; ?>
-	
 
 
 	<br><br>

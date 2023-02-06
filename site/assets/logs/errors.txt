@@ -24,3 +24,4 @@
 2023-02-05 20:43:53	admin	http://pwx.local/1	Parse Error:  syntax error, unexpected token "}", expecting "," or ";" (line 70 of C:\Dropbox\laragon\www\pwx\site\templates\home.php)
 2023-02-05 20:52:58	guest	http://pwx.local/1	Parse Error:  syntax error, unexpected variable "$this" (line 15 of C:\Dropbox\laragon\www\pwx\site\templates\home.php)
 2023-02-05 20:53:06	admin	http://pwx.local/1	Parse Error:  syntax error, unexpected variable "$this" (line 15 of C:\Dropbox\laragon\www\pwx\site\templates\home.php)
+2023-02-06 09:11:23	admin	http://pwx.local/processwire/module/	Compile Error:  Cannot declare class ProcessWire\Helloworld, because the name is already in use (line 25 of C:\Dropbox\laragon\www\pwx\site\modules\HasTemplater\HasTemplater.module.php)

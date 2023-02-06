@@ -22,28 +22,36 @@ class Hypermedia{
 		return $this;
 	}
 
-	function renderFragment($url,$query){
+	function renderFragment($name,$url,$query){
 
-		$this->setFragment($url,$query)->render();
+		$this->setFragment($name,$url,$query)->render();
 
 	}
 
 	function fetch(){
-		return wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true])->render();
+		return wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true])->render().$this->fetchHelpers();
 	}
 
 
 	function render(){
 	
+		echo $this->fetch();
 		$castedPage = wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true]);
 		echo $castedPage->render();
-		?>
-		<div>
-		<a href="<?=$this->endpoint?>">Odkaz <?=$this->endpoint?></a>
-		</div>
-		<?php
-
+		echo $this->fetchHelpers();
+		
 		return $this;
+	}
+
+	function fetchHelpers(){
+		
+		$helpers = "";
+		$helpers .="<br>***************<br>";
+		$helpers .="<div><a href='".$this->endpoint."'>Odkaz ".$this->endpoint."</a> </div>";
+		$helpers .= "<br>***************<br>";
+
+		return $helpers;
+		
 	}
 
 }
@@ -77,8 +85,9 @@ $hypermedia = new Hypermedia;
 		["selector" => "published=0,children.count>0",
 			"onpage" => "50",
 			"page"=>"1"],["cache"=>20])->fetch();
-		$cache->save("x",$fragment,10);
+		$cache->save("x",$fragment,5);
 		echo $fragment;
+
 
 		//$hypermedia->fragment("#tasklist","/produkty/table","selector>>published=0,children.count>0)",["cache"=>60])->render();
 		

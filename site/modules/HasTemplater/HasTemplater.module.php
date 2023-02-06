@@ -22,7 +22,7 @@
  *
  */
 
-class Helloworld extends WireData implements Module, ConfigurableModule {
+class HasTemplater extends WireData implements Module, ConfigurableModule {
 
 	/**
 	 * Construct
