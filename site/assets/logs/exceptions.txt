@@ -5,3 +5,4 @@
 2023-02-06 09:37:42	admin	http://pwx.local/	WireCache::save does not know how to cache values of type ProcessWire\Hypermedia (in C:\Dropbox\laragon\www\pwx\wire\core\WireCache.php line 434)
 2023-02-06 10:10:10	admin	http://pwx.local/produkty/1/2/3?selector=published_0_children.count_0&onpage=50&page=1	Method WireInput::getSegments does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
 2023-02-06 10:59:11	admin	http://pwx.local/	Method WireInput::getSegments does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-06 11:24:37	admin	http://pwx.local/produkty/1/2/3?selector=published_0_children.count_0&onpage=50&page=1	Method ProcessWire::paths does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)

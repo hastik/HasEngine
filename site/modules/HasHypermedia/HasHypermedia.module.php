@@ -178,11 +178,69 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
 
 
+		$site_spec_template_path = wire()->config->paths->templates."api/".$page->template->name."/default.php";
 
-		$site_spec_template_path = $this->site_path."templates/page_templates/".$page->template->name.".php";
-		$webengine_spec_template_path = $this->webengine_path."templates/page_templates/".$page->template->name.".php";
-		bd($site_spec_template_path);
+		$pathsToApi = [
+			"site" => wire()->config->paths->templates."api/",
+			"module" => wire()->config->paths->siteModules."api/"
+		];
+
+		bd($pathsToApi);
+
+		$possiblePaths = [];
+
+		//$finalSegment = array_pop($activeSegments);
+		//bd($finalSegment);
 		
+		$template = $page->template->name;
+		bd($template);
+		
+
+		$time_start = microtime(true);
+
+		foreach($pathsToApi as $location => $pathToApi){
+			if($activeSegments){
+				$segments = $activeSegments;
+				array_unshift($segments,$template);
+				$name_segments = array();
+				do{	
+					
+					$separator = $segments ? "/" : "";
+
+					$default_path = implode("/",$segments).$separator."default.php";
+
+					array_unshift($name_segments,array_pop($segments));
+
+					$separator = $segments ? "/" : "";
+
+					$specific_path = implode("/",$segments).$separator.implode("_",$name_segments).".php";
+					
+					$possiblePaths[] = $pathToApi.$specific_path;
+					$possiblePaths[] = $pathToApi.$default_path;
+					
+				}
+				while($segments);
+			}
+		}
+
+		$time_end = microtime(true);
+		$time = $time_end - $time_start;
+
+		bd($time);
+
+		bd($possiblePaths);
+
+		foreach($possiblePaths as $path){
+			if(file_exists($path)){
+				$page->template->setFilename($path);
+				$page->setQuietly("_hasTemplateFile",$path);
+				bd($page);
+				break;
+			}
+		}
+
+		
+
 
 
 		/*

@@ -64,6 +64,16 @@ $hypermedia = new Hypermedia;
 <script src="https://unpkg.com/htmx.org@1.8.5"></script>
 <script src="https://unpkg.com/htmx.org/dist/ext/preload.js"></script>
 
+
+<style>
+
+	table td{
+		border: 1px solid grey;
+		padding: 1rem 2rem;
+	}
+
+</style>
+
 <body hx-ext="preload" >
 <div id="content">
 	Homepage content 
@@ -74,6 +84,10 @@ $hypermedia = new Hypermedia;
 
 <div class="">
 
+
+<table>
+
+
 <?php
 
 	if($cache->get("x")){
@@ -81,7 +95,7 @@ $hypermedia = new Hypermedia;
 	}
 	else {
 		echo "neni cache";
-		$fragment = $hypermedia->setFragment("testprodukt","/produkty/table",
+		$fragment = $hypermedia->setFragment("testprodukt","/produkty/table/item",
 		["selector" => "published=0,children.count>0",
 			"onpage" => "50",
 			"page"=>"1"],["cache"=>20])->fetch();
@@ -95,9 +109,43 @@ $hypermedia = new Hypermedia;
 	
 	
 ?>
+
+</table>
 <br>
 
+<hr>
 
+<?php
+
+	if($cache->get("y")){
+		echo $cache->get("y");
+	}
+	else {
+
+		//$fragment = $hypermedia->prepareFragment(); 
+		foreach($pages as $page){
+			//$fragment->set(["id"=>$page->id])->fetchFile(); //todo fetch
+			//$fragment->set(["id"=>$page->id])->include();//todo include
+		}
+
+		$fragment = $hypermedia->setFragment("/produkty/table",
+		["children" => "pocet>3",
+			"method"=> "get",
+			"approach"=> "onload",
+			"onpage" => "50",
+			"page"=>"1"],["cache"=>20],["name"=>"tableproduktynahp"])->fetch();
+		$cache->save("y",$fragment,5);
+		echo $fragment;
+
+
+		//$hypermedia->fragment("#tasklist","/produkty/table","selector>>published=0,children.count>0)",["cache"=>60])->render();
+		
+	}
+	
+	
+?>
+
+<hr>
 
 <?php ?>
 </div>
