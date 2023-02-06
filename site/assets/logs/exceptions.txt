@@ -1,0 +1,4 @@
+2023-02-05 11:34:13	admin	http://pwx.local/	Method ProcessWire::getByPath does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-05 11:43:16	admin	http://pwx.local/produkty/2	Method WireInput::_urlSegments does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-05 12:02:33	admin	http://pwx.local/produkty/1	Method Page::_urlSegments does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-05 12:35:05	admin	http://pwx.local/produkty/1	Method Page::_urlSegments does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)

@@ -41,7 +41,7 @@ $config->useMarkupRegions = true;
 $config->prependTemplateFile = '_init.php';
 
 // Append this file in /site/templates/ to any rendered template files
-$config->appendTemplateFile = '_main.php';
+//$config->appendTemplateFile = '_main.php';
 
 // Allow template files to be compiled for backwards compatibility?
 $config->templateCompile = false;
@@ -53,7 +53,7 @@ $config->templateCompile = false;
  * Installer: Database Configuration
  * 
  */
-$config->dbHost = 'localhost';
+$config->dbHost = '127.0.0.1';
 $config->dbName = 'pwx';
 $config->dbUser = 'root';
 $config->dbPass = '';

@@ -31,3 +31,5 @@
 2023-02-03 12:12:53	admin	http://pwx.local/processwire/module/	Installed module 'RockMigrations'
 2023-02-03 12:12:53	admin	http://pwx.local/processwire/module/	Saved module info caches
 2023-02-03 12:12:54	admin	http://pwx.local/processwire/module/edit?name=RockMigrations	Saved module info caches
+2023-02-05 11:23:57	admin	http://pwx.local/processwire/setup/template/edit?id=29	Installed module 'InputfieldTextTags'
+2023-02-05 11:23:57	admin	http://pwx.local/processwire/setup/template/edit?id=29	Saved module info caches

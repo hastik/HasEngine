@@ -1582,6 +1582,7 @@ class PagesLoader extends Wire {
 			'allowUrl' => true,
 			'allowPartial' => true,
 			'allowUrlSegments' => false,
+			'allowGet' => false,
 			'_isRecursive' => false,
 		);
 
@@ -1622,6 +1623,23 @@ class PagesLoader extends Wire {
 		} else if(empty($path)) {
 			// path is empty and cannot match anything
 			return $options['getID'] ? 0 : $this->pages->newNullPage();
+		}
+
+		// new part of get arguments
+		if($options['allowGet']){
+			//var_dump($path);
+			$question_mark = strpos($path,"?");
+			if($question_mark){
+				$pathParts = explode("?",$path);
+				//var_dump($pathParts);
+				$path = $pathParts[0];
+				//var_dump($pathParts[1]);
+				$_getString = $pathParts[1];
+				//var_dump($_getString);
+				$_get = array();
+				parse_str($_getString,$_get);
+				var_dump($_get);
+			}
 		}
 
 		$_path = $path;
@@ -1788,6 +1806,7 @@ class PagesLoader extends Wire {
 		if(!$pageID && $options['allowUrlSegments'] && !$options['_isRecursive'] && count($_pathParts)) {
 			// attempt to match parent pages that allow URL segments
 			$pathParts = $_pathParts;
+			
 			$urlSegments = array();
 			$recursiveOptions = array_merge($options, array(
 				'getID' => false,
@@ -1807,6 +1826,7 @@ class PagesLoader extends Wire {
 				if($page->template->urlSegments) {
 					// matched page template allows URL segments
 					$page->setQuietly('_urlSegments', $urlSegments);
+					$page->setQuietly('_get', $_get);
 					if(!$options['getID']) return $page;
 					$pageID = $page->id;
 				} else {
