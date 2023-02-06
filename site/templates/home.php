@@ -1,60 +1,7 @@
 <?php namespace ProcessWire;
+  //include_once 'hypermedia.php';
 
 // Template file for “home” template used by the homepage
-
-class Hypermedia{
-
-	public $name;
-	public $url;
-	public $query;
-	public $get;
-	public $endpoint;
-
-	function setFragment($name,$url,$query){
-		$this->name = $name;
-		$this->query = $query;
-		$this->url = $url;
-
-		$this->get = http_build_query($query);
-
-		$this->endpoint = $url."?".$this->get;
-
-		return $this;
-	}
-
-	function renderFragment($name,$url,$query){
-
-		$this->setFragment($name,$url,$query)->render();
-
-	}
-
-	function fetch(){
-		return wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true])->render().$this->fetchHelpers();
-	}
-
-
-	function render(){
-	
-		echo $this->fetch();
-		$castedPage = wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true]);
-		echo $castedPage->render();
-		echo $this->fetchHelpers();
-		
-		return $this;
-	}
-
-	function fetchHelpers(){
-		
-		$helpers = "";
-		$helpers .="<br>***************<br>";
-		$helpers .="<div><a href='".$this->endpoint."'>Odkaz ".$this->endpoint."</a> </div>";
-		$helpers .= "<br>***************<br>";
-
-		return $helpers;
-		
-	}
-
-}
 
 
 
@@ -90,7 +37,7 @@ $hypermedia = new Hypermedia;
 
 <?php
 
-	if($cache->get("x")){
+	if($cache->get("x") && false){
 		echo $cache->get("x");
 	}
 	else {
@@ -99,7 +46,7 @@ $hypermedia = new Hypermedia;
 		["selector" => "published=0,children.count>0",
 			"onpage" => "50",
 			"page"=>"1"],["cache"=>20])->fetch();
-		$cache->save("x",$fragment,5);
+		//$cache->save("x",$fragment,5);
 		echo $fragment;
 
 
@@ -117,24 +64,24 @@ $hypermedia = new Hypermedia;
 
 <?php
 
-	if($cache->get("y")){
+	if($cache->get("y") && false){
 		echo $cache->get("y");
 	}
 	else {
 
 		//$fragment = $hypermedia->prepareFragment(); 
-		foreach($pages as $page){
+		//foreach($pages as $page){
 			//$fragment->set(["id"=>$page->id])->fetchFile(); //todo fetch
 			//$fragment->set(["id"=>$page->id])->include();//todo include
-		}
+		//}
 
-		$fragment = $hypermedia->setFragment("/produkty/table",
+		$fragment = $hypermedia->setFragment("testprodukt","/produkty/table",
 		["children" => "pocet>3",
 			"method"=> "get",
 			"approach"=> "onload",
 			"onpage" => "50",
 			"page"=>"1"],["cache"=>20],["name"=>"tableproduktynahp"])->fetch();
-		$cache->save("y",$fragment,5);
+		//$cache->save("y",$fragment,5);
 		echo $fragment;
 
 

@@ -1,5 +1,9 @@
 <?php namespace ProcessWire;
 
+
+
+include "hypermedia.php";
+
 /**
  * ProcessWire “Hello world” demonstration module
  *
@@ -23,6 +27,9 @@
  */
 
 class HasHypermedia extends WireData implements Module, ConfigurableModule {
+
+
+	public $hypermedia;
 
 	/**
 	 * Construct
@@ -48,6 +55,10 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 *
 	 */
 	public function init() {
+
+		$this->hypermedia = "tady je objekt hypermédií";
+
+		//$this->wire()->set("hypermedia", $this->hypermedia);	
 
 		// Add a hook after the $pages->save, to issue a notice every time a page is saved
 		$this->pages->addHookAfter('saved', $this, 'pageSaveHookExample'); 
@@ -177,8 +188,6 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		$page->setQuietly("_hasGet",$activeGet);
 		$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
 
-
-		$site_spec_template_path = wire()->config->paths->templates."api/".$page->template->name."/default.php";
 
 		$pathsToApi = [
 			"site" => wire()->config->paths->templates."api/",
