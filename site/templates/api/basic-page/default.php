@@ -1,1 +1,1 @@
-Halo haló
+Default pro Table

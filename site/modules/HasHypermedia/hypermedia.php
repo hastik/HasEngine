@@ -2,68 +2,196 @@
 
 class Hypermedia{
 
-    public $name;
-    public $url;
-    public $path;
-    public $query;
-    public $get;
-    public $segments;
-    public $endpoint;
+    public $insertMethod;
+
     public $requestMethod;
 
-    function setFragment($url,$query){
+    public $url;
+    public $sanitized_url;
 
-        $this->requestMethod = "GET";
-        $this->query = $query;
-        $this->url = $url;
-        $this->segments = $this->segmentsFromUrl($url);
+    public $query;
+    public $sanitized_query;
 
-        $this->get = http_build_query($query);
+    public $get;
 
-        $this->endpoint = $url."?".$this->get;
+    public $path;
+    public $segments;
+
+    public $page;
+
+    public $possiblePaths;
+    
+    
+
+
+    public function __call($name, $args) {
+
+        switch ($name) {
+            case 'wireResource':
+                switch (count($args)) {
+                    case 1:
+                        return call_user_func_array(array($this, 'setResourceFrom1'), $args);
+                    case 2:
+                        return call_user_func_array(array($this, 'setResourceFrom2'), $args);
+                 }
+
+            case 'includeResource':
+                switch (count($args)) {
+                    case 0:
+                        return $this->anotherFuncWithNoArgs();
+                    case 5:
+                        return call_user_func_array(array($this, 'anotherFuncWithMoreArgs'), $args);
+                }
+        }
+    }
+
+
+    function getToQuery($get){
+        $queryArray = array();
+        foreach($get as $name => $value){
+            $queryArray[]= $name."=".$value;
+        }
+
+        return implode("&",$queryArray);
+    }
+
+    function queryToGet($query){
+        $queryArray = explode("&",$query);
+        $get = array();
+        foreach($queryArray as $queryPart){
+            $pos = strpos($queryPart,"=");
+            $name = substr($queryPart,0,$pos);
+            $value = substr($queryPart,$pos+1,null);    
+            $get[$name]=$value;
+        }
+
+        return $get;
+    }
+
+    function setInsertMethod($arg){
+        
+        $this->insertMethod = $arg ? $arg : "wire";
+        
+    }
+
+    function get($arg1, $arg2 = null, $arg3 = null){
+
+        if(is_array($arg2)){
+            $this->setInsertMethod($arg3);
+            $this->setResourceFrom2($arg1,$arg2);
+        }
+        elseif(is_object($arg2)){
+            $this->setInsertMethod($arg3);
+            $this->setResourceFromPage($arg1,$arg2);
+        }
+        else{
+            $this->setInsertMethod($arg2);
+            $this->setResourceFrom1($arg1);
+        }
 
         return $this;
-    }
-
-
-    function renderFragment($name,$url,$query){
-
-        $this->setFragment($name,$url,$query)->render();
 
     }
 
-    function fetch(){
-        return wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true])->render().$this->fetchHelpers();
-    }
+    
 
+    function setResourceFrom1($url){
+        $this->url = $url;
 
-    function render(){
+        $urlParts = explode("?",$this->url);
 
-        echo $this->fetch();
-        $castedPage = wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true]);
-        echo $castedPage->render();
-        echo $this->fetchHelpers();
+        $this->path = $urlParts[0];
+        $this->query = $urlParts[1];
+        
+        $this->get = $this->queryToGet($this->query);
+        $this->sanitized_query = http_build_query($this->get);
+        $this->sanitized_url = $this->path."?".$this->sanitized_query;
+        $this->segments = $this->segmentsFromUrl($this->url);
         
         return $this;
     }
+
+    function setResourceFrom2($path,$get){
+
+        $this->requestMethod = "GET";
+
+        $this->get = $get;
+        $this->path = $path;
+
+        $this->query = $this->getToQuery($get);
+        $this->sanitized_query = http_build_query($get);
+
+        $this->url = $this->path."?".$this->query;
+        $this->sanitized_url = $this->path."?".$this->sanitized_query;
+
+        $this->segments = $this->segmentsFromUrl($this->url);
+
+        return $this;
+
+    }
+
+    function setResourceFromPage($url,$page){
+        $this->page = $page;
+        return $this->setResourceFrom1($url);
+    }
+
+
+
+    function fetch(){
+        switch ($this->insertMethod){
+            case "wire" :
+                return $this->fetchWire();            
+            case "curl" :
+                return $this->fetchCurl();
+            case "include" :
+                return $this->fetchInclude();
+        }
+            
+    }
+
+
+    function fetchWire(){
+
+        //bd($this->get["cache"]);
+        
+        if(isset($this->get["cache"])){
+            $cache = $this->get["cache"];
+            //bd("kes bude");
+
+            if(wire("cache")->get($this->url)){
+               // bd("vracim kes");
+                return wire("cache")->get($this->url);
+                
+            }
+            else{
+                $output = wire()->pages->getByPath($this->url, ['allowUrlSegments' => true, 'allowGet' => true])->render();//.$this->fetchHelpers();
+                wire("cache")->save($this->url,$output,$cache);
+                //bd("ukladam kes");
+                return $output;
+            }
+        }
+
+        //bd($this->url);
+        //bd(wire()->pages->getByPath($this->url, ['allowUrlSegments' => true, 'allowGet' => true])->render().$this->fetchHelpers());
+
+        return wire()->pages->getByPath($this->url, ['allowUrlSegments' => true, 'allowGet' => true])->render();//.$this->fetchHelpers();
+    }
+        
 
     function fetchHelpers(){
         
         $helpers = "";
         $helpers .="<br>***************<br>";
-        $helpers .="<div><a href='".$this->endpoint."'>Odkaz ".$this->endpoint."</a> </div>";
+        $helpers .="<div><a href='".$this->sanitized_url."'>Odkaz ".$this->url."</a> </div>";
         $helpers .= "<br>***************<br>";
 
         return $helpers;
         
     }
 
-    function include($data){
-
-    }
 
 
-    function getFromUrl($url){
+    /*function getFromUrl($url){
        
         $question_mark = strpos($url,"?");
 
@@ -83,7 +211,7 @@ class Hypermedia{
         else{
             return null;
         }
-    }
+    }*/
 
     function segmentsFromUrl($url){
 
@@ -103,27 +231,15 @@ class Hypermedia{
 
     }
 
-    function testParsingUrl($url){
-        bd($this->getFromUrl($url));
-        bd($this->segmentsFromUrl($url));
-    }
-
-    function templateFile(){
-
-    }
-
-    function wireFragment(){
-        return wire()->pages->getByPath($this->endpoint, ['allowUrlSegments' => true, 'allowGet' => true])->render().$this->fetchHelpers();
-    }
-
-    function curlFragment(){
+    function fetchCurl(){
         $http = new WireHttp();
-        $curl = $http->get("http://pwx.local".$this->url); //TODO začátek url adresy založit v konstruktoru
+        $curl = $http->get("http://pwx.local".$this->sanitized_url); //TODO začátek url adresy založit v konstruktoru
         return $curl;
     }
 
-    function includeFragment($page){
+    function fetchInclude(){
 
+        $page = $this->page;
         $segment_string = str_replace($page->url, "",$this->path);
 
 		$activeSegments = $this->segmentsFromUrl($segment_string);
@@ -198,7 +314,7 @@ class Hypermedia{
 		$time = $time_end - $time_start;
 
 		//bd($time);		
-
+        $this->possiblePaths = $possiblePaths;
         return $possiblePaths;
 
     }

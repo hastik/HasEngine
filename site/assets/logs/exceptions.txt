@@ -128,3 +128,6 @@
 2023-02-06 19:44:13	admin	http://pwx.local/1?q=2	Method ProcessWire::send does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
 2023-02-06 20:58:42	admin	http://pwx.local/1?q=2	Method ProcessWire::get does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
 2023-02-07 07:22:59	admin	http://pwx.local/x/4	Method HasHypermedia::activeTemplateFromPossibles does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-07 09:10:40	?	?	SQLSTATE[HY000]: General error: 2006 MySQL server has gone away (in C:\Dropbox\laragon\www\pwx\wire\core\WireDatabasePDOStatement.php line 168)
+2023-02-07 20:31:15	guest	http://pwx.local/test/x/4	Unknown Selector operator: '[empty]' -- was your selector value properly escaped? field='pocet', value='= 999', selector: 'parent_id=1027, pocet = 999, sort=sort' (in C:\Dropbox\laragon\www\pwx\wire\core\Selectors.php line 222)
+2023-02-07 20:35:24	guest	http://pwx.local/test/x/4	Method Page::findMany does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)

@@ -4,8 +4,7 @@
 <?php 
 
     $hasPages = $page->children($page->get("_hasGet")["children"]);
-    bd($page);
-    bd($hasPages);
+
 
 ?>
 
