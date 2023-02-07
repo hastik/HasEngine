@@ -173,84 +173,24 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 */
 	public function pageRenderHypermediaProcess(HookEvent $event) {
 
-		// The $event->object is always the object hooked to, in this case a Page object,
-		// since the hook is to Page::render.
 		
-		$page = $event->object; /** @var Page $page */
-		
+		$page = $event->object; /** @var Page $page */		
+
 		$activeSegments = $page->get("_urlSegments") ? $page->get("_urlSegments") : wire()->input->urlSegments();
-
 		$activeGet = $page->get("_get") ? $page->get("_get") : wire()->input->get();
-
 		$activeRequestMethod = $page->get("_requestMethod") ? $page->get("_requestMethod") : wire()->input->requestMethod();
-		//bd($activeSegments);
+		
 		$page->setQuietly("_hasUrlSegments",$activeSegments);
 		$page->setQuietly("_hasGet",$activeGet);
 		$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
 
 
-		$pathsToApi = [
-			"site" => wire()->config->paths->templates."api/",
-			"module" => wire()->config->paths->siteModules."api/"
-		];
+		$hypermedia = new Hypermedia;
 
-		bd($pathsToApi);
+		$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
 
-		$possiblePaths = [];
-
-		//$finalSegment = array_pop($activeSegments);
-		//bd($finalSegment);
-		
-		$template = $page->template->name;
-		bd($template);
-		
-
-		$time_start = microtime(true);
-
-		foreach($pathsToApi as $location => $pathToApi){
-			if($activeSegments){
-				$segments = $activeSegments;
-				array_unshift($segments,$template);
-				$name_segments = array();
-				do{	
-					
-					$separator = $segments ? "/" : "";
-
-					$default_path = implode("/",$segments).$separator."default.php";
-
-					array_unshift($name_segments,array_pop($segments));
-
-					$separator = $segments ? "/" : "";
-
-					$specific_path = implode("/",$segments).$separator.implode("_",$name_segments).".php";
-					
-					$possiblePaths[] = $pathToApi.$specific_path;
-					$possiblePaths[] = $pathToApi.$default_path;
-					
-				}
-				while($segments);
-			}
-		}
-
-		$time_end = microtime(true);
-		$time = $time_end - $time_start;
-
-		bd($time);
-
-		bd($possiblePaths);
-
-		foreach($possiblePaths as $path){
-			if(file_exists($path)){
-				$page->template->setFilename($path);
-				$page->setQuietly("_hasTemplateFile",$path);
-				bd($page);
-				break;
-			}
-		}
-
-		
-
-
+		$page->setQuietly("_hasTemplateFile",$hypermedia->activeTemplateFromPossibles($possiblePaths));
+		$page->template->setFilename($hypermedia->activeTemplateFromPossibles($possiblePaths));
 
 		/*
 

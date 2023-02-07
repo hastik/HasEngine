@@ -9,7 +9,6 @@ $hypermedia = new Hypermedia;
 
 ?>
 <script src="https://unpkg.com/htmx.org@1.8.5"></script>
-<script src="https://unpkg.com/htmx.org/dist/ext/preload.js"></script>
 
 
 <style>
@@ -29,8 +28,32 @@ $hypermedia = new Hypermedia;
 <div class="castedContent" style = "background: #f2f2f2; padding: 4rem;">
 
 
+<?php 
+	
+	$pg = wire()->pages->get("/o-nas");
+	$fragment = $hypermedia->setFragment("/o-nas/table/item",
+	["selector" => "published=0,children.count>0"],["cache"=>20])->includeFragment($pg);
+	//$cache->save("x",$fragment,5);
+	//echo $fragment;
+	echo $fragment;
+
+?>
+
 <div class="">
 
+
+<hr>
+
+<?php 
+	$fragment = $hypermedia->setFragment("/produkty/table/item",
+	["selector" => "published=0,children.count>0",
+		"onpage" => "50",
+		"page"=>"1"],["cache"=>20])->curlFragment(null);
+	//$cache->save("x",$fragment,5);
+	echo $fragment;
+?>
+
+<hr>
 
 <table>
 
@@ -42,7 +65,7 @@ $hypermedia = new Hypermedia;
 	}
 	else {
 		echo "neni cache";
-		$fragment = $hypermedia->setFragment("testprodukt","/produkty/table/item",
+		$fragment = $hypermedia->setFragment("/produkty/table/item",
 		["selector" => "published=0,children.count>0",
 			"onpage" => "50",
 			"page"=>"1"],["cache"=>20])->fetch();
@@ -75,7 +98,7 @@ $hypermedia = new Hypermedia;
 			//$fragment->set(["id"=>$page->id])->include();//todo include
 		//}
 
-		$fragment = $hypermedia->setFragment("testprodukt","/produkty/table",
+		$fragment = $hypermedia->setFragment("/produkty/table",
 		["children" => "pocet>3",
 			"method"=> "get",
 			"approach"=> "onload",

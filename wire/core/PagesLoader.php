@@ -1638,7 +1638,7 @@ class PagesLoader extends Wire {
 				//var_dump($_getString);
 				$_get = array();
 				parse_str($_getString,$_get);
-				var_dump($_get);
+				//var_dump($_get);
 			}
 		}
 
