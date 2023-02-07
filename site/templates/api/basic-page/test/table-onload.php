@@ -56,7 +56,7 @@
         <tr id="replace" 
             hx-get="/test/test/table-includes?static=1&cache=20"
             hx-select="#tbody"
-            hx-trigger="load"
+            hx-trigger="load delay:1s"
             hx-target="closest tbody"
             hx-swap="outerHTML">
             <td colspan="3">

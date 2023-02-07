@@ -62,7 +62,7 @@ $hypermedia = new Hypermedia;
 
 
 	<?php 
-
+/*
 	wire("cache")->deleteAll();
 
 	$time_start = microtime(true);
@@ -78,7 +78,7 @@ $hypermedia = new Hypermedia;
 	dump($time);
 	echo $fragment;		
 
-
+*/
 ?>
 
 
@@ -120,7 +120,7 @@ $hypermedia = new Hypermedia;
   <h2>Foreach Wire</h2>
 
 
-  <?php 
+  <?php  /*
 	$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-wire",
 	["selector" => "published=0,children.count>0",
@@ -135,7 +135,7 @@ $hypermedia = new Hypermedia;
 	dump($time);
 	echo $fragment;		
 
-
+*/
 ?>
 
 
@@ -146,7 +146,7 @@ $hypermedia = new Hypermedia;
   <h2>Foreach WireOnload</h2>
 
 
-  <?php 
+  <?php /*
 	$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-onload",
 	["selector" => "published=0,children.count>0",
@@ -159,7 +159,7 @@ $hypermedia = new Hypermedia;
 	$time = $time_end - $time_start;
 	dump($time);
 	echo $fragment;		
-
+*/
 
 ?>
 

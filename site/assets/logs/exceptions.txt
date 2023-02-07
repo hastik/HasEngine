@@ -131,3 +131,7 @@
 2023-02-07 09:10:40	?	?	SQLSTATE[HY000]: General error: 2006 MySQL server has gone away (in C:\Dropbox\laragon\www\pwx\wire\core\WireDatabasePDOStatement.php line 168)
 2023-02-07 20:31:15	guest	http://pwx.local/test/x/4	Unknown Selector operator: '[empty]' -- was your selector value properly escaped? field='pocet', value='= 999', selector: 'parent_id=1027, pocet = 999, sort=sort' (in C:\Dropbox\laragon\www\pwx\wire\core\Selectors.php line 222)
 2023-02-07 20:35:24	guest	http://pwx.local/test/x/4	Method Page::findMany does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-07 21:13:51	admin	http://pwx.local/test/x/4	Field does not exist: field (in C:\Dropbox\laragon\www\pwx\wire\core\PageFinder.php line 3677)
+2023-02-07 21:15:02	admin	http://pwx.local/test/x/4	Field does not exist: field (in C:\Dropbox\laragon\www\pwx\wire\core\PageFinder.php line 3677)
+2023-02-07 21:32:42	admin	http://pwx.local/test/x/4	Method ProcessWire::findRaw does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
+2023-02-07 21:35:53	guest	http://pwx.local/test/x/4	Unknown name(s) for findRaw: Property 'url' requires the PagePaths module be installed (in C:\Dropbox\laragon\www\pwx\wire\core\PagesRaw.php line 1762)
