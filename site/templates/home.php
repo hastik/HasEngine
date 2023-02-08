@@ -11,6 +11,8 @@ function printTime($time){
 
 $hypermedia = new Hypermedia; 
 
+$hypermedias = new Hypermedias; 
+
 ?>
 <script src="https://unpkg.com/htmx.org@1.8.5"></script>
 
@@ -77,7 +79,7 @@ $hypermedia = new Hypermedia;
 
 	wire("cache")->deleteAll();
 	
-	$time_start = microtime(true);
+/*	$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-foreach",
 	["selector" => "published=0,children.count>0",
 		"onpage" => "50",
@@ -87,7 +89,7 @@ $hypermedia = new Hypermedia;
 		echo $hypermedia->printUrl();
 	
 	echo $fragment;		
-
+*/
 
 ?>
 
@@ -104,7 +106,7 @@ $hypermedia = new Hypermedia;
 
   <?php  
 
-	$fragment = $hypermedia->get("/test/test/table-includes",
+	/*$fragment = $hypermedia->get("/test/test/table-includes",
 	["selector" => "published=0,children.count>0",
 		"onpage" => "50",
 		"page"=>"1"],"wire")->fetch();
@@ -113,7 +115,7 @@ $hypermedia = new Hypermedia;
 	echo $hypermedia->printUrl();
 
 	echo $fragment;		
-
+*/
 
 ?>
 
@@ -130,15 +132,15 @@ $hypermedia = new Hypermedia;
 
   <?php  
   
-	$fragment = $hypermedia->sget("test/test/table-wire//selector=count>4,limit=20&cache=20&onpage=4?selectable=4&live");
+	$fragment = $hypermedias->get("/test/test/table-wire/selector=count>4,published=1,limit=20&cache=20&onpage=4?selector=count>4,published=1,limit=20&cache=20&onpage=4","wire");
 	
 	
 	//bd($hypermedia);
 	
-	echo $hypermedia->printTime();
+	/*echo $hypermedia->printTime();
 	echo $hypermedia->printUrl();
 	echo $fragment;		
-
+*/
 
 ?>
 
@@ -151,7 +153,7 @@ $hypermedia = new Hypermedia;
 
 
   <?php 
-	$time_start = microtime(true);
+	/*$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-onload",
 	["selector" => "published=0,children.count>0",
 		"onpage" => "50",
@@ -162,7 +164,7 @@ $hypermedia = new Hypermedia;
 	echo $hypermedia->printTime();
 	echo $hypermedia->printUrl();
 	echo $fragment;		
-
+*/
 
 ?>
 

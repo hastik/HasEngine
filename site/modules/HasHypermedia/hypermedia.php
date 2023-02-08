@@ -76,7 +76,6 @@ class Hypermedia{
         
     }
 
-    function sget()
 
     function get($arg1, $arg2 = null, $arg3 = null){
 

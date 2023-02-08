@@ -5,7 +5,8 @@
 <?php 
 
     //$pages = wire($pages)->findMany("template=basic-page");
-    $pages = $page->children("field=title|pocet");
+    //$pages = $page->children("field=title|pocet");
+    $pages = $page->children("limit=10");
 
     $hypermedia = new Hypermedia; 
 

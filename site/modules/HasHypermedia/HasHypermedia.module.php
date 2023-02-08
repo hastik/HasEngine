@@ -3,6 +3,7 @@
 
 
 include "hypermedia.php";
+include "shypermedia.php";
 
 /**
  * ProcessWire “Hello world” demonstration module
@@ -173,10 +174,27 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 */
 	public function pageRenderHypermediaProcess(HookEvent $event) {
 
-		
-		$page = $event->object; /** @var Page $page */		
+		$page = $event->object; /** @var Page $page */
+
+
+		if($page->template->name === 'admin' && wire("user")->isLoggedin()){
+			return;
+		}
+
+		$hypermedias= new Hypermedias;
+		$hypermedias->get($page,"live");
+
+		exit;
+
+				
 
 		$activeSegments = $page->get("_urlSegments") ? $page->get("_urlSegments") : wire()->input->urlSegments();
+
+		dumpBig($page);
+		dumpBig($activeSegments);
+		
+		//exit;
+
 		$activeGet = $page->get("_get") ? $page->get("_get") : wire()->input->get();
 		$activeRequestMethod = $page->get("_requestMethod") ? $page->get("_requestMethod") : wire()->input->requestMethod();
 		
