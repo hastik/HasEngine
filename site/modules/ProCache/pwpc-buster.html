@@ -1,0 +1,116 @@
+<p>
+You can use ProCache’s API to cache bust any file-based asset on your server using either the <code>$buster</code> 
+API variable, the <code>buster()</code> function, or the <code>URL / busterURL</code> properties automatically added to 
+files managed by ProcessWire File and Image fields. 
+</p>
+
+<p><strong>Using the $buster API variable:</strong></p>
+
+<p>
+When using the $buster API variable, you will call either the <code>url()</code> or <code>httpUrl()</code> function from it. 
+Provide the function with the file-asset URL you want to bust, and it will return a cache-busted version of it. 
+</p>
+
+<pre>&lt;a href='&lt;?php echo <b>$buster-&gt;url</b>('/files/file.pdf'); ?&gt;'&gt;View PDF&lt;/a&gt;</pre>
+
+<p>
+If you need a full http URL including scheme and hostname (like you might use for a generated email) 
+use the <code>httpUrl()</code> method instead:
+</p>
+
+<pre>$url = <b>$buster-&gt;httpUrl</b>('/files/report.csv');</pre>
+
+<p>
+If the $buster API variable is not in scope, you can also access it via <code>wire('buster')</code>, or you 
+may prefer to use the function-based version, discussed below.
+</p>
+
+<p><strong>Using the buster() function:</strong></p>
+
+<p>
+The <code>buster()</code> function may be more convenient in some instances because it is always in scope. 
+It can also be accessed in two different ways, both of which produce the same result:
+</p>
+
+<pre>
+$url = <b>buster</b>()<b>-&gt;url</b>('/files/file.pdf');
+$url = <b>buster</b>('/files/file.pdf');
+</pre>
+
+<p>An example in HTML context:</p>
+
+<pre>
+&lt;a href="&lt;?= <b>buster</b>('/files/file.pdf') ?&gt;"&gt;View PDF&lt;/a&gt;
+</pre>
+
+<p>Or if you need a full http URL including scheme and hostname, the following two calls are equivalent:</p>
+
+<pre>
+$url = <b>buster</b>()<b>-&gt;httpUrl</b>('/files/file.pdf');
+$url = <b>buster</b>('/files/file.pdf', <b>true</b>);
+</pre>
+</p>
+<p><strong>Using the URL or busterURL properties for ProcessWire managed assets:</strong></p>
+
+<p>
+If you want to cache-bust a file based asset that ProcessWire is already managing for you, there is a shortcut. 
+In ProcessWire 3.0.96 or newer, ProCache automatically updates ProcessWire’s existing file and image 
+<code>URL</code> (uppercase) property to use ProCache’s buster (rather than the more basic one built in to ProcessWire). 
+You would use this rather than the lowercase <code>url</code> version.
+</p>
+
+<pre>
+foreach($page-&gt;images as $image) {
+  echo "&lt;img src='<b>$image->URL</b>'&gt;";
+}
+</pre>
+
+<p>
+If you are not yet running ProcessWire 3.0.96 or newer, you can use <code>busterURL</code> rather than <code>URL</code>. 
+This also works in any version of ProcessWire.
+</p>
+
+<pre>
+foreach($page-&gt;images as $image) {
+  echo "&lt;img src='<b>$image->busterURL</b>'&gt;";
+}
+</pre>
+
+<p><strong>Automatically cache-bust assets linked in rich text/HTML fields:</strong></p>
+
+<p>
+ProCache comes with another module called TextformatterBuster. Once installed, you can select it as the “Text Formatter” 
+for any Textarea field that contains HTML, like those using CKEditor for example. To do this, install the module and then
+edit your Textarea field(s), click the <em>Details</em> tab, and select “ProCache Buster” as the Textformatter. If there
+are already other Textformatters selected, that’s okay, but you may want to select Buster to be at the bottom of the list
+so that it runs last.   
+</p>  
+
+<p><strong>Applying Buster manually to blocks of HTML:</strong></p>
+
+<p>
+If you want to manually apply Buster to any assets linked in a block of HTML, you can do so with the <code>$buster->html()</code>
+function. To use it, simply pass in the HTML, and it will return the same HTML with busted assets:
+</p>  
+
+<pre>
+echo $buster-&gt;html($html);	
+</pre>
+
+<p>
+By default it will use the settings configured with the TextformatterBuster module. If you want to specify exactly what
+file extensions and HTML attributes it should look for, pass in an options array as the second argument:  
+</p>  
+
+<pre>
+echo $buster-&gt;html($html, [
+  'exts' => 'jpg jpeg gif png svg pdf',
+  'attrs' => 'src href srcset'
+]);	
+</pre>  
+
+<p class='detail'>
+Note that the exts (extensions) and attrs (attributes) options above are the default values, so if 
+that’s what you want, then there’s no need to specify the options array.   
+</p>	
+

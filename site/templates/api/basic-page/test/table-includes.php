@@ -8,8 +8,9 @@
     //$pages = $page->children("limit=1000",["loadPages=false"]);
     //$pages = wire("pages")->find("template=basic-page,field=title|pocet",["loadPages=false"]); //,["loadPages=true"]
     //$pages = $page->children("field=title|pocet,limit=1000");
-
-    $pages = wire("pages")->findRaw("template=basic-page","title,pocet");
+    $pages = $page->children();
+    //bd($pages);exit;
+    //$pages = wire("pages")->findRaw("template=basic-page","title,pocet");
     //bd($test);
    
 

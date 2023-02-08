@@ -1,0 +1,1207 @@
+<?php namespace ProcessWire;
+
+/**
+ * ProcessWire Pro Cache
+ * 
+ * The ultimate cache and optimization tool for ProcessWire powered websites. 
+ * Static cache page delivery plus CDN, SCSS/LESS compile, CSS merge/minify, 
+ * JS merge/minify, HTML minify, asset buster, tweaks, .htaccess optimization, 
+ * live tests and more. 
+ *
+ * Copyright (C) 2021 by Ryan Cramer Design, LLC 
+ *
+ * This is a commercially licensed and supported module
+ * DO NOT DISTRIBUTE
+ *
+ * https://processwire.com/store/pro-cache/
+ * 
+ * @property null|int|bool $cacheOn
+ * @property int|bool $htAllow Allow writing to .htaccess file? @deprecated
+ * @property int $htVersion Htaccess type/version to use 
+ * @property int|bool $htNoEx Prevent example files from being created?
+ * @property bool $debug
+ * @property int $cacheTime
+ * @property string $cacheTimeCustom
+ * @property array $cacheTemplates
+ * @property array $cacheClear Default cache clear behaviors, one or more CACHE_CLEAR_* constant values.
+ * @property array $cacheClearOff Default bypasses of cache clear behaviors, one or more CACHE_CLEAR_OFF_* constant values. 
+ * @property string $cacheClearCustom
+ * @property array $minifyTemplates
+ * @property string $minifyIgnoreTags
+ * @property string $minifyBlocks
+ * @property string $minifyRemoveBlankAttr
+ * @property array $minifyOptions
+ * @property array $minifyHTMLOptions
+ * @property int $minifyMaxImportCSS
+ * @property string $noCacheGetVars
+ * @property string $noCacheCookies
+ * @property int $urlSegments Max URL segments to cache
+ * @property int $https
+ * @property array $cacheHosts
+ * @property string $cacheDir
+ * @property string $bodyClass
+ * @property string $licenseKey
+ * @property string $cdnHosts
+ * @property string $cdnExts
+ * @property string $cdnAttrs
+ * @property array $cdnTemplates
+ * @property int $cdnStatus CDN status (0=Off, 1=On for guests only, 2=On for logged-in users only, 3=On for everyone)
+ * @property int|string $canonical Use canonical link tag? (0=No, 1=Yes with current scheme, 'http'=Yes w/HTTP scheme, 'https'=Yes w/HTTPS scheme)
+ * @property int $busterUrlType
+ * @property string $docRootPath Server document root path for .htaccess file (for when %{DOCUMENT_ROOT} does not work)
+ * @property int $assetExpireTime Expire CSS or JS merge/minify assets after this amount of time (default=0)
+ * @property null|int|string $timer
+ * @property int $schemaVersion
+ * @property int $slashUrls Require URLs to have trailing slash? (1=yes slash, 0=either, -1=no slash)
+ * @property string lessType LESS compiler type to use, 'leafo' or 'wikimedia'
+ * @property-read int $renderPageID The ID of the page currently being rendered in ProcessWire
+ * 
+ * Helpers
+ * @property-read ProCacheBuster $buster
+ * @property-read ProCacheStatic $static
+ * @property-read ProCacheHooker $hooker
+ * @property-read ProCacheFiles $files
+ * @property-read ProCacheMinify $minify
+ * @property-read ProCacheCDN $cdn
+ * @property-read ProCacheTweaks $tweaks
+ * @property-read ProCacheHtaccess $htaccess
+ * 
+ * @method bool allowCacheForPage(Page $page)
+ * @method void clearAll() Clear entire cache
+ *
+ * @todo Add support for auto-inclusion of hreflang tags
+ * @todo Add support for sitemap.xml generation
+ * @todo Add support for no-minify on inline-level tags like <code>
+ *
+ */
+
+class ProCache extends WireData implements Module, ConfigurableModule {
+
+	/**
+	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+
+		return array(
+			'title' => 'ProCache', 
+			'version' => 403, 
+			'summary' => 'The ultimate caching and optimization tool for ProcessWire.',
+			'author' => 'Ryan Cramer Design, LLC',
+			'href' => 'https://processwire.com/ProCache/',
+			'singular' => true, 
+			'autoload' => true, 
+			'icon' => 'fighter-jet',
+			'installs' => 'ProcessProCache',
+			'requires' => 'ProcessWire>=' . self::MIN_PW_VERSION
+		);
+	}
+
+	/**
+	 * Minimum ProcessWire version to run ProCache
+	 *
+	 */
+	const MIN_PW_VERSION = '3.0.164';
+
+	/**
+	 * Database table used by this module
+	 *
+	 * Note that this table is used only for keeping track of expiration times,
+	 * as a result, we don't spend CPU time keeping it consistent with the file
+	 * system except when it is applicable. Meaning, you may see inaccurate data
+ 	 * in this table from time to time before it expires and is deleted--all ok.
+	 *
+	 */
+	const DB_TABLE = 'pages_procache';
+	
+	/**
+	 * Cache clear: clear self (note: this is always assumed)
+	 *
+	 */
+	const CACHE_CLEAR_SELF = 0; 
+
+	/**
+	 * Cache clear: clear children
+	 *
+	 */
+	const CACHE_CLEAR_CHILDREN = 1; 
+
+	/**
+	 * Cache clear: clear all parents, except homepage
+	 *
+	 */
+	const CACHE_CLEAR_PARENTS = 2; 
+
+	/**
+	 * Cache clear: clear homepage
+	 *
+	 */
+	const CACHE_CLEAR_HOME = 3; 
+
+	/**
+	 * Cache clear: clear entire site
+	 *
+	 */
+	const CACHE_CLEAR_SITE = 4;
+	
+	/**
+	 * Cache clear: clear specific page IDs
+	 *
+	 */
+	const CACHE_CLEAR_PAGES = 5;
+	
+	/**
+	 * Cache clear: clear pages matching selector
+	 *
+	 */
+	const CACHE_CLEAR_SELECTOR = 6;
+
+	/**
+	 * Cache clear: Family (page, parent, siblings, children, grandchildren, and so on…)
+	 * 
+	 */
+	const CACHE_CLEAR_FAMILY = 7;
+	
+	/**
+	 * Cache clear: Page references
+	 *
+	 */
+	const CACHE_CLEAR_REFERENCES = 8;
+
+	/**
+	 * Cache clear: No self (overrides CACHE_CLEAR_SELF)
+	 *
+	 */
+	const CACHE_CLEAR_NOSELF = 9; 
+
+	/**
+	 * Cache clear off: Do not clear cache when saved page uses template not itself configured for ProCache
+	 * 
+	 */
+	const CACHE_CLEAR_OFF_TEMPLATE = 1;
+
+	/**
+	 * Cache clear off: Do not clear cache when system page is saved
+	 * 
+	 */
+	const CACHE_CLEAR_OFF_SYSTEM = 2;
+	
+	/**
+	 * Cache clear off: Do not clear cache when page is saved from API rather than interactive/admin
+	 *
+	 */
+	const CACHE_CLEAR_OFF_SITE = 3;
+
+	/**
+	 * Max number of URL-based page numbers that are supported per page (where template allows)
+	 *
+ 	 */
+	const MAX_PAGE_NUM = 1000; 
+
+	/**
+	 * Number of seconds between maintenance runs
+	 *
+	 */
+	const MAINTENANCE_SECONDS = 30;
+
+	/**
+	 * Current version for .htaccess file tweaks
+	 * 
+	 */
+	const HTACCESS_TWEAKS_VERSION = "3.0"; 
+
+	/**
+	 * CDN statuses (identical to those in ProCacheCDN)
+	 * 
+	 */
+	const CDN_STATUS_OFF = 0;
+	const CDN_STATUS_GUEST = 1;	// on for guests only
+	const CDN_STATUS_USERS = 2;	// on for logged in users only
+	const CDN_STATUS_ALL = 3;	// on for all visitors
+	
+	/**
+	 * Timer of page render time, used when in test/debug mode
+	 *
+	 */
+	protected $timer; 
+
+	/**
+	 * ID of page that we are hooking for render
+	 *
+	 */
+	protected $renderPageID = 0; 
+
+	/**
+	 * Segment for directory name off /site/assets/
+	 *
+	 */
+	protected $cacheDir = 'ProCache';
+
+	/**
+	 * Debug info to include as HTML comment at end of output
+	 *
+	 */
+	protected $debugInfo = array();
+
+	/**
+	 * @var ProCacheBuster
+	 * 
+	 */
+	protected $buster;
+	
+	/**
+	 * Helper (ProCacheClass) instances populated as they are requested
+	 * 
+	 * @var array
+	 * 
+	 */
+	protected $helpers = array(
+		'buster' => false, 
+		'cdn' => false,
+		'files' => false,
+		'hooker' => false, 
+		'htaccess' => false,
+		'minify' => false, 
+		'static' => false,
+		'tests' => false,
+		'tweaks' => false,
+		'less' => false,
+		'scss' => false,
+	);
+
+	/**
+	 * Construct and establish defaults for our config settings
+	 *
+	 */
+	public function __construct() {
+		
+		require_once(__DIR__ . '/ProCacheClass.php');
+		require_once(__DIR__ . '/ProCacheCompiler.php');
+
+		$this->data(array(
+			'debug' => false,
+			'htAllow' => false, // allow writing to .htaccess file?
+			'htVersion' => 2, // htaccess type/version to use 
+			'htNoEx' => false,
+			'cacheOn' => null, // null==not yet set
+			'cachePrimed' => null, 
+			'schemaVersion' => 0, 
+			'cacheTime' => 3600,
+			'cacheTimeCustom' => '',
+			'cacheTemplates' => array(),
+			'cacheClear' => array(self::CACHE_CLEAR_SITE),
+			'cacheClearOff' => array(self::CACHE_CLEAR_OFF_TEMPLATE, self::CACHE_CLEAR_OFF_SYSTEM),
+			'cacheClearCustom' => '',
+			'cacheLikely' => 'licenseKey',
+			'cacheHosts' => array(),
+			'cachePrefix' => 'pwpc', 
+			'noCacheCookies' => false,
+			'noCacheGetVars' => '*',
+			'urlSegments' => 0,
+			'https' => 0,
+			'bodyClass' => '',
+			'canonical' => '0',
+			'licenseKey' => '',
+			'docRootPath' => '',
+			'busterUrlType' => 'qstr',
+			'assetExpireTime' => 0,
+			'cdnHosts' => '',
+			'cdnExts' => '',
+			'cdnAttrs' => 'src srcset href',
+			'cdnTemplates' => array(),
+			'cdnStatus' => self::CDN_STATUS_OFF, // see CDN_STATUS constants
+			'slashUrls' => 0, 
+			'lessType' => 'leafo',
+			
+			// IDs of templates allowed to perform minify on
+			'minifyTemplates' => array(),
+			
+			// tags to not minify
+			'minifyIgnoreTags' => 'textarea pre svg',
+			
+			// max kilobytes to allow for files encoded directly into the css
+			'minifyMaxImportCSS' => 5,
+			
+			// blank attributes to remove (when combined with minifyHTMLOptions=unquote
+			'minifyRemoveBlankAttr' => 'class dir for id lang style title',
+			
+			// block level (and other) elements where whitespace will be removed around them
+			'minifyBlocks' =>
+				'!doctype address article aside audio blockquote body br button canvas caption col colgroup ' .
+				'dd div dl dt embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup ' .
+				'hr html li link main map meta nav noscript object ol optgroup option output p pre progress ' .
+				'script section table tbody td tfoot th thead title tr ul video',
+			
+			// general minfication options
+			'minifyOptions' => array(
+				// htmlGuest	
+				// htmlUsers
+				// htmlCache
+				// jsHead
+				// jsBody
+				// cssHead
+				// useTemplates
+			),
+			
+			// options for HTML minification
+			'minifyHTMLOptions' => array(
+				'js', 				// minify inline js
+				'css', 				// minify inline css
+				'uncomment',		// remove HTML comments
+				'noXHTML', 			// remove XHTML style <tag /> closing tags to just <tag>
+				'unblank', 			// remove blank attributes (where allowed, see minifyRemoveBlankAttr)
+				'untag', 			// remove unnecessary HTML closing tags?
+				'unattr',			// remove useless/unnecessary attributes? 
+				'unbool',			// collapse boolean attributes
+				'unquote',			// unquote attributes where allowed
+				// 'hrefs', 		// convert absolute href attributes to relative, when relative is shorter
+			),
+		), true); 
+		
+		$this->wire('procache', $this);
+	}
+
+	/**
+	 * Wired to ProcessWire instance (3.0.158+)
+	 * 
+	 */
+	public function wired() {
+		$this->wire('procache', $this, true);
+		parent::wired();
+	}
+	
+	/**
+	 * Initialize the cache and attach hooks
+	 *
+	 */
+	public function init() {
+	
+		$cachePrefix = strtoupper($this->data('cachePrefix'));
+		$cachePrimed = strpos($this->get($this->data('cacheLikely')), $cachePrefix) === 0;
+		$this->data('cachePrimed', $cachePrimed); 
+		
+		// set again, just in case different instance from construct
+		$this->wire('procache', $this, true);
+		
+		if($this->noCacheCookies === false) {
+			// cookie names that should bypass the cache
+			$config = $this->wire('config'); /** @var Config $config */
+			$this->set('noCacheCookies', 
+				($config->sessionName . "_challenge\n") .
+				($config->sessionNameSecure ? $config->sessionNameSecure : $config->sessionName . 's') . '_challenge'
+			);
+		}
+		
+		if($cachePrimed) {
+			if($this->cacheOn) $this->getHooker()->addInitHooks();
+			$this->buster = $this->getBuster();
+			$this->wire('buster', $this->buster, true);
+			include_once(dirname(__FILE__) . '/pwpc-func-ns.php');
+			include_once(dirname(__FILE__) . '/pwpc-func.php');
+		}
+	}
+
+	/**
+	 * Determine if current page is a caching candidate and attach hooks if so
+	 *
+	 */
+	public function ready() {
+
+		if(!$this->data('cachePrimed') | !$this->cacheOn) return;
+		
+		$this->getHooker()->addReadyHooks();
+		
+		// record the ID of the page we are intending to render
+		// so that it can be double checked in our render hook
+		$this->renderPageID = $this->wire('page')->id;
+
+		// start an informational timer if we are allowed to add to HTML
+		if($this->debugMode()) $this->timer = Debug::timer('ProCache');
+	}
+
+	/**
+	 * Set a config value
+	 *
+	 * In this case, we capture a license key set() and use that to set our
+	 * pseudo random cache directory name. 
+	 * 
+	 * @param string $key
+	 * @param mixed $value
+	 * @return ProCache|WireData
+	 *
+	 */
+	public function set($key, $value) {
+
+		if($key === 'licenseKey' && strlen($value) > 15) {
+			if(strlen($this->licenseKey) && $value != $this->licenseKey) $this->clearAll();
+			$pos = strrpos($value, '.')+1;
+			$dir = $this->wire('sanitizer')->name(substr($value, $pos, $pos+16)); 
+			$this->cacheDir = 'ProCache-' . $dir;
+
+		} else if($key === 'cacheOn' && $value !== null) {
+			$value = (bool) $value; 
+			$this->toggleCache($value);
+			
+		} else if($key === 'cacheTimeCustom') {
+			if(!is_string($value)) $value = '';
+			if(strpos($value, '#') !== false) {
+				$lines = array();
+				foreach(explode("\n", $value) as $line) {
+					$line = trim($line);
+					if(strpos($line, '#') === 0 || !strpos($line, '=')) continue;
+					list($name, $time) = explode('=', $line);	
+					$lines[] = trim($name) . '=' . ((int) trim($time));
+				}
+				$value = implode("\n", $lines);
+			}
+		}
+
+		return parent::set($key, $value);
+	}
+	
+	/**
+	 * Return a config value
+	 * 
+	 * @param string $key
+	 * @return mixed
+	 * 
+	 */
+	public function get($key) {
+		if($key === 'cacheDir') return $this->cacheDir; 
+		if($key === 'timer') return $this->timer;
+		if($key === 'renderPageID') return $this->renderPageID;
+		if($key === 'buster') return $this->buster;
+		if($key === 'fileMerger') return $this->getFileMerger();
+		if(isset($this->helpers[$key])) return $this->getHelper($key);
+		return parent::get($key);
+	}
+
+	/******************************************************************************************
+	 * HELPER INSTANCES
+	 *
+	 */
+
+	/**
+	 * Get ProCacheBuster instance
+	 *
+	 * @return ProCacheBuster
+	 *
+	 */
+	public function getBuster() {
+		if($this->buster) return $this->buster;
+		require_once(__DIR__ . '/ProCacheBuster.php');
+		$this->buster = new ProCacheBuster();
+		$this->buster->set('urlType', $this->busterUrlType);
+		return $this->buster;
+	}
+
+	/**
+	 * Get an instance of the ProCache file merger
+	 * 
+	 * Note: always returns a new instance
+	 *
+	 * @return ProCacheFileMerger
+	 *
+	 */
+	public function getFileMerger() {
+		require_once(__DIR__ . '/ProCacheFileMerger.php');
+		$merger = new ProCacheFileMerger();
+		$merger->procache($this);
+		$this->wire($merger);
+		$merger->setExpiration($this->assetExpireTime); // $this->cacheTime > 86400 ? $this->cacheTime : 86400);
+		$merger->setMaxImportSizeCSS($this->minifyMaxImportCSS);
+		return $merger;
+	}
+
+	/**
+	 * Get instance of ProCacheCDN
+	 *
+	 * @return ProCacheCDN
+	 *
+	 */
+	public function getCDN() {
+		return $this->getHelper('cdn', 'ProCacheCDN'); 
+	}
+	
+	/**
+	 * @return ProCacheCompiler|ProCacheCompilerLeafoLESS|ProCacheCompilerWikimediaLESS
+	 * 
+	 */
+	public function getCompilerLESS() {
+		$lessType = $this->lessType;
+		if($lessType === 'module') {
+			if($this->wire()->modules->isInstalled('Less')) {
+				return $this->getHelper('less', "ProCacheCompilerModuleLESS");
+			}
+			$lessType = 'wikimedia'; // fallback to wikimedia if module not present
+		}
+		if($lessType === 'wikimedia') {
+			return $this->getHelper('less', "ProCacheCompilerWikimediaLESS");
+		}
+		return $this->getHelper('less', "ProCacheCompilerLeafoLESS");
+	}
+
+	/**
+	 * @return ProCacheCompiler|ProCacheCompilerSCSS
+	 * 
+	 */
+	public function getCompilerSCSS() {
+		return $this->getHelper('scss', 'ProCacheCompilerSCSS'); 
+	}
+
+	/**
+	 * @return ProCacheHooker
+	 * 
+	 */
+	public function getHooker() {
+		return $this->getHelper('hooker'); 
+	}
+
+	/**
+	 * @return ProCacheFiles
+	 *
+	 */
+	public function getFiles() {
+		return $this->getHelper('files'); 
+	}
+
+	/**
+	 * @return ProCacheStatic
+	 *
+	 */
+	public function getStatic() {
+		return $this->getHelper('static');
+	}
+
+	/**
+	 * @return ProCacheMinify
+	 *
+	 */
+	public function getMinify() {
+		return $this->getHelper('minify');
+	}
+	
+	/**
+	 * @return ProCacheTests
+	 *
+	 */
+	public function getTests() {
+		return $this->getHelper('tests');
+	}
+
+	/**
+	 * @return ProCacheTweaks
+	 *
+	 */
+	public function getTweaks() {
+		return $this->getHelper('tweaks'); 
+	}
+	
+	/**
+	 * @return ProCacheHtaccess
+	 *
+	 */
+	public function getHtaccess() {
+		return $this->getHelper('htaccess');
+	}
+
+	/**
+	 * Get ProCacheClass helper instance
+	 * 
+	 * @param string $name
+	 * @param string $class
+	 * @return ProCacheCDN|ProCacheFiles|ProCacheHooker|ProCacheMinify|ProCacheTweaks|ProCacheStatic|ProCacheHtaccess|ProCacheTests|ProCacheCompiler
+	 * 
+	 */
+	protected function getHelper($name, $class = '') {
+		if(!empty($this->helpers[$name])) return $this->helpers[$name];
+		if(empty($class)) $class = 'ProCache' . ucfirst($name); 
+		$file = __DIR__ . "/$class.php";
+		require_once($file);
+		$class = __NAMESPACE__ . "\\$class";
+		$helper = new $class($this);
+		$this->wire($helper); 
+		$this->helpers[$name] = $helper; 
+		return $helper;
+	}
+
+
+	/******************************************************************************************
+	 * STATIC CACHE
+	 * 
+	 */
+
+	/**
+	 * Get or set cache on/off status
+	 * 
+	 * For public API use this to set cache status (rather than the $cacheOn property) because 
+	 * this will commit the state to the module config as well. 
+	 * 
+	 * @param bool|null $set Specify true to enable, false to disable, or omit to get cache status
+	 * @return bool
+	 * 
+	 */
+	public function cacheOn($set = null) {
+		
+		if($set === null) return (bool) $this->cacheOn;
+		
+		$set = (bool) $set;
+		$cacheOn = (bool) $this->cacheOn;
+		
+		if($set === $cacheOn) return $cacheOn;
+		
+		$this->set('cacheOn', $set); 
+		$modules = $this->wire('modules'); /** @var Modules $modules */
+		$data = $modules->getConfig($this);
+		
+		if($data['cacheOn'] != $set) {
+			$data['cacheOn'] = $set;
+			$modules->saveConfig($this, $data); 
+		}
+		
+		return $set;
+	}
+	
+	/**
+	 * Toggle the cache on or off
+	 * 
+	 * #pw-internal
+	 *
+	 * @param bool $enable True to enable, false to disable
+	 *
+	 */
+	protected function toggleCache($enable) {
+
+		$onPath = $this->getCachePath();
+		$offPath = rtrim($onPath, '/') . '-off/';
+
+		if($enable && !is_dir($onPath) && is_dir($offPath)) {
+			$this->getFiles()->rename($offPath, $onPath); // turn ON
+		} else if(!$enable && is_dir($onPath) && !is_dir($offPath)) {
+			$this->getFiles()->rename($onPath, $offPath); // turn OFF
+		}
+	}
+
+	/**
+	 * Return the path where we store cache files, optionally for a page 
+	 * 
+	 * @param Page|null $page
+	 * @param array $options
+	 *  - `pageNum` (int): Page/pagination number (default=1)
+	 *  - `urlSegments` (array|string): Array or string of URL segments (default=[])
+	 *  - `create` (bool|null): Create if it does not exist? true, false or null for auto-detect (default=null)
+	 *  - `language` (Language|null): Language to use (default=null)
+	 * @return string
+	 *
+ 	 */
+	public function getCachePath(Page $page = null, array $options = array()) {
+		return $this->getStatic()->getCachePath($page, $options); 
+	}
+
+	/**
+	 * Get cache file for given Page (and options) or false if it does not exist
+	 *
+	 * @param Page $page
+	 * @param array $options
+	 *  - `getFile` (bool): Specify true to return the filename whether it exists or not (default=false).
+	 *  - `host` (string): Hostname or omit for current hostname.
+	 *  - `https` (bool|null): True for HTTPS-only file, false for HTTP-only file, or omit for current scheme.
+	 *  - `pageNum` (int): Pagination number or omit for first pagination or pagination not applicable.
+	 *  - `language` (Language|string|int|null): Language or omit for current language or if not applicable.
+	 *  - `urlSegments` (array): URL segments to include or omit if not applicable.
+	 *  - `urlSegmentStr` (string): Optionally specify URL segments here as "seg1/seg2/etc" as alternative to above.
+	 * @return bool|string Returns false if not cached, or returns string with cache filename if cached.
+	 *
+	 */
+	public function hasCacheFile(Page $page, array $options = array()) {
+		return $this->getStatic()->hasCacheFile($page, $options);
+	}
+
+	/**
+	 * Return an info array about the given page’s ProCache info or false if not cached
+	 *
+	 * Returned info array is array("path of cached page" => "date created");
+	 * An empty array just indicates the page is enabled for caching, but no cache file exists.
+	 *
+	 * @param Page $page
+	 * @return array|bool
+	 *
+	 */
+	public function pageInfo(Page $page) {
+		return $this->getStatic()->pageInfo($page);
+	}
+	
+	/**
+	 * Return the number of pages in the cache
+	 *
+	 * @return int
+	 *
+	 */
+	public function numCachedPages() {
+		return $this->getStatic()->numCachedPages();
+	}
+
+	/**
+	 * Is this page configured for caching in ProCache?
+	 * 
+	 * Use this method to determine if a page is one that has potential to have a cache file saved for it. 
+	 * 
+	 * @param Page $page
+	 * @return bool 
+	 * 
+	 */
+	public function isPageCacheable(Page $page) {
+		return in_array($page->template->id, $this->cacheTemplates);
+	}
+
+	/**
+	 * Hookable method to allow custom rules to determine if page output should be saved to cache file for this request
+	 * 
+	 * Note this method does not indicate if the page is cacheable, only if a cached file should be 
+	 * saved for this request. Meaning, this will always be false when a user is logged in. 
+	 *
+	 * @param Page $page
+	 * @return bool
+	 *
+	 */
+	public function ___allowCacheForPage(Page $page) {
+		$allow = $this->getStatic()->allowCacheForPage($page);
+		return $allow;
+	}
+
+	/**
+	 * Clear the cache for multiple pages
+	 *
+	 * @param PageArray $items
+	 * @param bool $getFiles Return array of files? (default=true) Specify false to get a count instead.
+	 * @return array Files and/or directories that were removed
+	 *
+	 */
+	public function clearPages(PageArray $items, $getFiles = true) {
+		return $this->getStatic()->clearPages($items, $getFiles);
+	}
+
+	/**
+	 * Clear the cache for a specific page, including pageNum and urlSegment versions
+	 *
+	 * @param Page $page
+	 * @param array $options
+	 *  - `language` (string|int|Language|bool): Clear only this language (default='')
+	 *  - `urlSegmentStr` (string): Clear only entries matching this URL segment string, wildcards OR regex OK (default='')
+	 *  - `urlSegments` (array|bool): Clear only entries having any of these URL segments,
+	 *     boolean false to clear no URL segments,
+	 *     omit (or empty array) to clear all (default=[])
+	 *  - `pageNum` (int|bool): Clear only pagination number (i.e. 2 or higher),
+	 *     true to clear all pageNum>1
+	 *     false to clear no pageNum>1,
+	 *     omit (int 0) to clear all (default=0)
+	 *  - `clearRoot` (bool|null): Clear root index of page path? (default=false when specific URL segments or paginations requested, true otherwise)
+	 *  - `rmdir` (bool): Remove directories rather than index files? (default=false)
+	 *  - `getFiles` (bool): Get array of files that were cleared, rather than a count? (default=false)
+	 * @return int|array Quantity or array of files and/or directories that were removed
+	 *
+	 */
+	public function clearPage(Page $page, $options = array()) {
+		return $this->getStatic()->clearPage($page, $options);
+	}
+
+	/**
+	 * Clear entire cache
+	 *
+	 * @return int Quantity of items cleared
+	 *
+	 */
+	public function ___clearAll() {
+		return $this->getStatic()->clearAll();
+	}
+
+	/**
+	 * Cleanup any 'ProCache-tmp' dirs that remain in /site/assets/
+	 * 
+	 * This is here to be called from a CRON job, on really large installations where the server
+	 * doesn't allow enough time/resources to complete full cache clears in a single http request.
+	 * 
+	 * @return int Number of directories removed
+	 * 
+	 */
+	public function tmpDirCleanup() {
+		return $this->getFiles()->tmpDirCleanup();
+	}
+
+	
+	/******************************************************************************************
+	 * CDN
+	 *
+	 */
+
+	/**
+	 * Is CDN active/allowed for current page/request/user?
+	 * 
+	 * @param Page|null|bool $page Omit for current Page, specify Page, or specify boolean to force allow/disallow
+	 * @return bool
+	 * 
+	 */
+	public function allowCDN($page = null) {
+		return $this->getCDN()->allowCDN($page);
+	}
+
+	/**
+	 * Populate CDN replacements into given $content regardless of whether it’s enabled
+	 * 
+	 * @param string $content HTML or CSS content to populate
+	 * @param string $type Either 'html', 'css', or 'other' (default='html')
+	 * @return bool Returns true if replacements were made, false if not
+	 * 
+	 */
+	public function populateCDN(&$content, $type = 'html') {
+		return $this->getCDN()->populateCDN($content, $type);
+	}
+
+	/**
+	 * Populate CDN replacements into given content if CDN enabled and allowed for given $page
+	 * 
+	 * @param string $content HTML or CSS content to populate 
+	 * @param string $type Either 'html', 'css' or 'other' (default='html')
+	 * @param Page $page Current page or omit to auto-detect
+	 * @return bool Returns true if replacements were made, false if not
+	 * 
+	 */
+	public function renderCDN(Page $page, &$content, $type = 'html') {
+		if(!$this->allowCDN($page)) return false;
+		return $this->populateCDN($content, $type);
+	}
+	
+	/**
+	 * Given a local URL convert to a CDN URL (if given URL is in CDN’s path space)
+	 * 
+	 * CDN must be enabled for current request in order for this to work. If you want to get
+	 * the URL regardless of whether CDN is active, use `$procache->getCDN()->url($url);` instead.
+	 *
+	 * @param string $url
+	 * @param bool $requireExt Require valid CDN file extension as defined in configuration? (default=true)
+	 * @return string
+	 *
+	 */
+	public function cdnUrl($url, $requireExt = true) {
+		return $this->allowCDN() ? $this->getCDN()->url($url, $requireExt) : $url;
+	}
+
+	
+	/******************************************************************************************
+	 * MERGE AND MINIFY 
+	 *
+	 */
+
+	/**
+	 * Merge the given array or csv string of files
+	 *
+	 * @param array|string|WireArray $files
+	 * @param bool $minify (default=true)
+	 * @return string With merged file URL
+	 *
+	 */
+	public function merge($files, $minify = true) {
+		return $this->getFileMerger()->merge($files, $minify)->url();
+	}
+
+	/**
+	 * Merge and minify the given array or CSV string of CSS, SCSS or LESS files
+	 * 
+	 * SCSS and LESS files will be automatically compiled. 
+	 *
+	 * @param array|string|WireArray $files
+	 * @param bool $minify (default=true)
+	 * @return string With merged file URL
+	 *
+	 */
+	public function css($files, $minify = true) {
+		return $this->getFileMerger()->setExtension('css')->merge($files, $minify)->url();
+	}
+
+	/**
+	 * Merge and minify the given array or CSV string of JS files
+	 *
+	 * @param array|string|WireArray $files
+	 * @param bool $minify (default=true)
+	 * @return string With merged file URL
+	 *
+	 */
+	public function js($files, $minify = true) {
+		return $this->getFileMerger()->setExtension('js')->merge($files, $minify)->url();
+	}
+
+	/**
+	 * Generate an HTML stylesheet <link> tag with the given files
+	 *
+	 * @param array|string|WireArray $files Can be array of CSV string of filenames
+	 * @param bool $minify (default=true)
+	 * @param string $media Optional media attribute
+	 * @return string With merged file URL
+	 *
+	 */
+	public function link($files, $minify = true, $media = '') {
+		$out = "<link rel='stylesheet' ";
+		if($media) $out .= "media='$media' ";
+		$out .= "href='" . $this->css($files, $minify) . "' />";	
+		return $out; 
+	}
+
+	/**
+	 * Generate an HTML javascript <script> tag with the given files merged
+	 *
+	 * @param array|string|WireArray $files
+	 * @param bool $minify (default=true)
+	 * @param string $type Optionally specify type "defer" or "async"
+	 * @return string With merged file URL
+	 *
+	 */
+	public function script($files, $minify = true, $type = '') {
+		$type = $type === 'defer' || $type === 'async' ? " $type" : "";
+		return "<script$type src='" . $this->js($files, $minify) . "'></script>";
+	}
+
+	/**
+	 * Get new instance of SCSS compiler
+	 * 
+	 * @return \ScssPhp\ScssPhp\Compiler
+	 * @see http://leafo.net/scssphp/docs/
+	 * 
+	 */
+	public function getSCSS() {
+		return $this->getCompilerSCSS()->getCompiler();
+	}
+	
+	/**
+	 * Get new instance of LESS compiler
+	 *
+	 * @return \lessc|\Less_Parser
+	 * @see http://leafo.net/lessphp/docs/
+	 * @see https://github.com/wikimedia/less.php
+	 *
+	 */
+	public function getLESS() {
+		return $this->getCompilerLESS()->getCompiler();
+	}
+	
+	/**
+	 * Minify HTML contained in $out argument
+	 *
+	 * @param string $out
+	 * @param array $options
+	 * @param bool $debug
+	 * @return bool
+	 *
+	 */
+	public function minifyHtml(&$out, array $options = array(), $debug = false) {
+		return $this->getMinify()->minifyHtml($out, $options, $debug);
+	}
+
+	
+	/******************************************************************************************
+	 * DEPRECATED PUBLIC API METHODS
+	 * 
+	 * These methods have been moved to dedicated classes, but are present here just in 
+	 * case anyone is calling them manually. 
+	 *
+	 */
+
+	/**
+	 * Merge and minify CSS and JS file references in output
+	 *
+	 * @param page $page
+	 * @param string $out
+	 * @return bool
+	 * @deprecated Use $procache->getMinify()->renderMerge() instead
+	 *
+	 */
+	public function renderMerge(Page $page, &$out) {
+		return $this->getMinify()->renderMerge($page, $out);
+	}
+	
+	/**
+	 * Minify HTML of output
+	 *
+	 * @param Page $page
+	 * @param string $out
+	 * @param bool $allowCache Whether or not content will be cached by ProCache
+	 * @return bool
+	 * @deprecated Use $procache->getMinify()->renderMinify() instead
+	 *
+	 */
+	public function renderMinify(Page $page, &$out, $allowCache) {
+		return $this->getMinify()->renderMinify($page, $out, $allowCache);
+	}
+
+	/**
+	 * Save a new static cache file
+	 *
+	 * @param Page $page
+	 * @param string $out
+	 * @return bool
+	 * @deprecated
+	 *
+	 */
+	public function renderCache(Page $page, &$out) {
+		return $this->getStatic()->renderCache($page, $out);
+	}
+
+	/**
+	 * Cache maintenance to occur every 30 seconds
+	 *
+	 * This cleans out cache files and entries that have expired
+	 * 
+	 * @deprecated Use $procache->getStatic()->cacheMaintenance() instead
+	 *
+	 */
+	public function cacheMaintenance() {
+		return $this->getStatic()->cacheMaintenance();
+	}
+
+	/**
+	 * Get the content-type extension for the given Page or Template
+	 *
+	 * @param Template|Page $item
+	 * @return string
+	 * @deprecated Use $procache->getStatic()->getContentTypeExt($item) instead
+	 *
+	 */
+	public function getContentTypeExt($item) {
+		return $this->getStatic()->getContentTypeExt($item);
+	}
+
+	/**
+	 * Return the index filename relative to the given host and https state
+	 *
+	 * If hostname and/or https aren't supplied, they will be determined automatically
+	 *
+	 * @param string $hostname
+	 * @param bool $https
+	 * @param string $ext
+	 * @return string
+	 * @deprecated Use $procache->getStatic()->cacheIndexBasename() instead
+	 *
+	 */
+	public function cacheIndexBasename($hostname = '', $https = null, $ext = 'html') {
+		return $this->getStatic()->cacheIndexBasename($hostname, $https, $ext); 
+	}
+
+	/**
+	 * Get the cache time for the given Template, or for all templates
+	 *
+	 * @param null|string|int|Template $template 
+	 * @return array|int
+	 * @deprecated Use $procache->getStatic()->getCacheTime() instead
+	 *
+	 */
+	public function getCacheTime($template = null) {
+		return $this->getStatic()->getCacheTime($template);
+	}
+
+	/**
+	 * Get the cache clearing behaviors for all templates or a given template
+	 *
+	 * @param null|Template|string|int|array $options
+	 * @return array 
+	 * @deprecated Use $procache->getStatic()->getCacheClearBehaviors() instead
+	 *
+	 */
+	public function getCacheClearBehaviors($options = array()) {
+		return $this->getStatic()->getCacheClearBehaviors($options);
+	}
+	
+	
+	/******************************************************************************************
+	 * MODULE ADMIN
+	 *
+	 */
+	
+	/**
+	 * Use debug mode?
+	 *
+	 * @return bool
+	 *
+	 */
+	public function debugMode() {
+		return $this->debug || $this->wire('config')->debug;
+	}
+
+	/**
+	 * Add or get debug info
+	 *
+	 * @param string $value Specify value to add
+	 * @param bool $prepend Prepend rather than append?
+	 * @return array When adding note that a blank array is returned
+	 *
+	 */
+	public function debugInfo($value = '', $prepend = false) {
+		if(empty($value)) return $this->debugInfo;
+		if($prepend) {
+			array_unshift($this->debugInfo, $value);
+		} else {
+			$this->debugInfo[] = $value;
+		}
+		return array();
+	}
+
+	/**
+	 * Module configuration (static)
+	 *
+	 * @param array $data
+	 * @return InputfieldWrapper
+	 * 
+	 */
+	public function getModuleConfigInputfields(array $data) {
+		if($data) {}
+
+		// check that they have the required PW version
+		if(version_compare($this->wire('config')->version, self::MIN_PW_VERSION, '<')) {
+			$this->error("ProCache requires ProcessWire " . self::MIN_PW_VERSION . " or newer. Please update.");
+		}
+
+		$form = new InputfieldWrapper();
+		if(!$this->wire()->config->demo) {
+			/** @var ProcessProCache $process */
+			$process = $this->wire()->modules->get('ProcessProCache');
+			if($process) $process->getLicenseConfig($form); 
+		}
+		
+		return $form; 	
+	}
+
+	/**
+	 * Get primary ProCache DB table name while also checking that schema is up-to-date
+	 * 
+	 * @return string
+	 * 
+	 */
+	public function getTable() {
+		return $this->getStatic()->getTable();
+	}
+
+	/**
+	 * Install
+	 *
+	 */
+	public function ___install() {
+		$this->getStatic()->install();
+		$this->modules->get('ProcessProCache'); 
+	}
+
+	/**
+	 * Uninstall
+	 *
+	 */
+	public function ___uninstall() {
+		try {
+			$this->getStatic()->uninstall();
+			$this->modules->uninstall('ProcessProCache'); 
+		} catch(\Exception $e) {
+			$this->error($e->getMessage());
+		}
+	}
+
+}
+
+

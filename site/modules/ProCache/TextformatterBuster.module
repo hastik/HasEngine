@@ -1,0 +1,223 @@
+<?php namespace ProcessWire;
+
+/**
+ * ProcessWire ProCache Buster Textformatter
+ *
+ * Copyright (C) 2020 by Ryan Cramer
+ *
+ * This is a commercially licensed and supported module
+ * DO NOT DISTRIBUTE
+ *
+ * https://processwire.com/ProCache/
+ * 
+ * @property array $exts
+ * @property array $attrs
+ * 
+ */
+class TextformatterBuster extends Textformatter implements Module, ConfigurableModule {
+
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'ProCache Buster', 
+			'version' => 1, 
+			'summary' => 'Automatically cache-bust file assets linked in HTML.', 
+			'requires' => 'ProCache',
+		); 
+	}
+	
+	public function __construct() {
+		$this->set('exts', array('jpg', 'jpeg', 'png', 'gif', 'svg', 'pdf'));
+		$this->set('attrs', array('href', 'src', 'srcset'));
+		parent::__construct();
+	}
+	
+	public function set($key, $value) {
+		if(($key === 'attrs' || $key === 'exts') && !is_array($value)) {
+			$value = explode(' ', strtolower($value)); 
+			$value = array_filter($value);
+		}
+		return parent::set($key, $value);
+	}
+
+	/**
+	 * Format string 
+	 * 
+	 * @param string $str
+	 * 
+	 */
+	public function format(&$str) { 
+		// first perform a check to see if we should execute more expensive text formatting
+		// and return when it's determined that we shouldn't
+		$numAttrs = 0;
+		$numExts = 0;
+		$hasSrcset = false;
+		foreach($this->attrs as $attr) {
+			if(stripos($str, " $attr=")) {
+				$numAttrs++;
+				if($attr === 'srcset') $hasSrcset = true;
+			}
+		}
+		if(!$numAttrs) return;
+		foreach($this->exts as $ext) {
+			if(stripos($str, ".$ext")) $numExts++;
+		}
+		if(!$numExts) return;
+		
+		$this->applyHTML($str);
+	
+		if($hasSrcset) {
+			$this->applySrcsetHTML($str); 
+		}
+	}
+
+	/**
+	 * Get Buster URL
+	 * 
+	 * @param string $url
+	 * @param array $options
+	 * @return string
+	 * 
+	 */
+	public function url($url, array $options = array()) {
+		$buster = $this->wire('buster');
+		return $buster ? $buster->url($url, $options) : $url;
+	}
+	
+	/**
+	 * Locate and replace file assets to bust
+	 *
+	 * @param string $html
+	 * @return int
+	 *
+	 */
+	protected function applyHTML(&$html) {
+		
+		$replacements = array();
+		$attrs = implode('|', $this->attrs);
+		$exts = implode('|', $this->exts); 
+
+		if(strpos($attrs, 'srcset') !== false) {
+			// do not perform srcset replacements here
+			$attrs = str_replace('srcset', '_ignore_srcset', $attrs);
+		}
+
+		$regex1 = '!<[a-z]+[^>]*?\s(?:' . $attrs . ')=["\']?(/[^/][^>\s]+?\.(?:' . $exts . '))["\'\s]?[^>]*>!i';
+		$regex2 = '!\s+(?:' . $attrs . ')=["\']?([^\s\'">?]+\.(?:' . $exts . '))["\'\s>]!i';
+
+		if(!preg_match_all($regex1, $html, $matches)) return 0;
+
+		foreach($matches[0] as $key => $fullMatch) {
+			$attrs = array();
+			// determine how many attributes in this tag have a URL needing buster	
+			foreach($this->attrs as $attr) {
+				if(stripos($fullMatch, " $attr=") !== false) $attrs[] = $attr;
+			}
+			if(count($attrs) === 1) {
+				// if just one matching URL then use data from our existing regex
+				$url = $matches[1][$key];
+				$busterUrl = $this->url($url, array('of' => true));
+				$replaceMatch = str_replace($url, $busterUrl, $fullMatch);
+				$replacements[$fullMatch] = $replaceMatch;
+			} else if(count($attrs) > 1) {
+				// if more than one then match and replace them all
+				$attrReplacements = array();
+				if(!preg_match_all($regex2, $fullMatch, $attrMatches)) continue;
+				foreach($attrMatches[0] as $k => $attrMatch) {
+					$url = $attrMatches[1][$k];
+					$busterUrl = $this->url($url, array('of' => true));
+					$replaceMatch = str_replace($url, $busterUrl, $attrMatch);
+					$attrReplacements[$attrMatch] = $replaceMatch;
+				}
+				if(count($attrReplacements)) {
+					$replacements[$fullMatch] = str_replace(array_keys($attrReplacements), array_values($attrReplacements), $fullMatch);
+				}
+			}
+		}
+
+		$numReplacements = count($replacements);
+		if($numReplacements) {
+			$html = str_replace(array_keys($replacements), array_values($replacements), $html);
+		}
+
+		return $numReplacements;
+	}
+
+	/**
+	 * Process srcset attributes
+	 *
+	 * @param string $html
+	 * @return int
+	 *
+	 */
+	protected function applySrcsetHTML(&$html) {
+
+		$regex = '!<[a-z0-9]+[^>]*\s(srcset=[\'"]([^\'"]+)[\'"])!is';
+		if(!preg_match_all($regex, $html, $matches)) return 0;
+
+		$replacements = array();
+
+		foreach($matches[0] as $key => $fullMatch) {
+
+			$_fullMatch = $fullMatch;
+			$srcset = $matches[1][$key];
+			$_srcset = $srcset;
+			$srcsetValue = $matches[2][$key];
+			$srcsetValue = str_replace(array("\n", "\r", "\t", ","), " ", $srcsetValue);
+			$urls = explode(' ', $srcsetValue);
+			$urls = array_filter($urls);
+
+			foreach($urls as $url) {
+				$_url = $url;
+				if(strpos($url, '.') === false) continue;
+				$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+				if(!in_array($ext, $this->exts)) {
+					continue;
+				}
+				$busterUrl = $this->url($_url);
+				if($busterUrl !== $_url) {
+					$srcset = str_replace($_url, $busterUrl, $srcset);
+				}
+			}
+
+			if($srcset != $_srcset) {
+				$fullMatch = str_replace($_srcset, $srcset, $fullMatch);
+			}
+
+			if($fullMatch !== $_fullMatch) {
+				$replacements[$_fullMatch] = $fullMatch;
+			}
+		}
+
+		$numReplacements = count($replacements);
+		if($numReplacements) {
+			$html = str_replace(array_keys($replacements), array_values($replacements), $html);
+		}
+
+		return $numReplacements;
+	}
+
+	/**
+	 * Module config
+	 * 
+	 * @param InputfieldWrapper $inputfields
+	 * 
+	 */
+	public function getModuleConfigInputfields(InputfieldWrapper $inputfields) {
+		/** @var InputfieldText $f */
+		$f = $this->wire('modules')->get('InputfieldText');
+		$f->attr('name', 'exts');
+		$f->label = $this->_('File extensions that Buster is allowed to bust');
+		$f->attr('value', implode(' ', $this->exts));
+		$f->columnWidth = 50;
+		$inputfields->add($f);
+		
+		$f = $this->wire('modules')->get('InputfieldText'); 
+		$f->attr('name', 'attrs'); 
+		$f->label = $this->_('HTML attributes to detect assets within'); 
+		$f->attr('value', implode(' ', $this->attrs)); 
+		$f->columnWidth = 50;
+		$inputfields->add($f);
+	}
+
+}
+

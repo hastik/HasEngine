@@ -126,3 +126,98 @@
 2023-02-07 20:44:38	admin	http://pwx.local/test/test/table-onload?static=1&cache=20	Saved module info caches
 2023-02-07 20:56:54	admin	http://pwx.local/x/4	Saved module info caches
 2023-02-07 20:56:58	admin	http://pwx.local/test/test/table-includes?static=1&cache=20	Saved module info caches
+2023-02-08 10:43:45	admin	http://pwx.local/processwire/module/?reset=1	Saved module info caches
+2023-02-08 10:45:22	admin	http://pwx.local/processwire/module/	Installed module 'AdminHelperLinks'
+2023-02-08 10:45:22	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:45:47	admin	http://pwx.local/processwire/module/	Installed module 'FieldtypeCache'
+2023-02-08 10:45:47	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:46:47	admin	http://pwx.local/processwire/module/	Installed module 'LazyCron'
+2023-02-08 10:46:47	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:46:59	admin	http://pwx.local/processwire/module/	Installed module 'Less'
+2023-02-08 10:46:59	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:47:34	admin	http://pwx.local/processwire/module/	Installed module 'PagePaths'
+2023-02-08 10:47:34	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:48:39	admin	http://pwx.local/processwire/module/	Installed module 'ProcessDatabaseBackups'
+2023-02-08 10:48:39	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:48:51	admin	http://pwx.local/processwire/module/	Installed module 'ProcessForgotPassword'
+2023-02-08 10:48:51	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:49:38	admin	http://pwx.local/processwire/module/	Installed module 'ProcessWireUpgradeCheck'
+2023-02-08 10:49:38	admin	http://pwx.local/processwire/module/	Installed module 'ProcessWireUpgrade'
+2023-02-08 10:49:38	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:49:50	admin	http://pwx.local/processwire/module/	Installed module 'ProcessProCache'
+2023-02-08 10:49:50	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-02-08 10:49:50	admin	http://pwx.local/processwire/module/	Installed module 'ProCache'
+2023-02-08 10:52:20	admin	http://pwx.local/processwire/setup/upgrades/refresh	Saved module info caches
+2023-02-08 10:54:52	admin	http://pwx.local/processwire/	Saved module info caches
+2023-02-08 12:39:54	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:40:37	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:41:19	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:42:05	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:44:58	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:45:45	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:47:00	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:47:56	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:48:07	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:49:44	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:50:00	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:50:31	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:51:13	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:51:27	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:51:43	admin	http://pwx.local/processwire/module/navJSON/?configurable=1	Saved module info caches
+2023-02-08 12:53:55	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:54:45	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:55:02	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:55:39	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:56:28	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:56:39	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:56:48	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:57:28	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:57:53	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:58:28	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:58:42	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:58:50	admin	http://pwx.local/	Saved module info caches
+2023-02-08 12:59:26	admin	http://pwx.local/processwire/setup/logs/navJSON/	Saved module info caches
+2023-02-08 13:03:08	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:03:33	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:04:23	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:04:42	admin	http://pwx.local/processwire/module/navJSON/?install=1	Saved module info caches
+2023-02-08 13:04:42	admin	http://pwx.local/processwire/module/?new=	Saved module info caches
+2023-02-08 13:04:42	admin	http://pwx.local/processwire/module/?new=	Saved module info caches
+2023-02-08 13:07:04	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:07:26	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:08:48	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:09:36	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:10:59	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:11:54	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:13:59	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:14:06	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:14:25	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:15:01	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:18:14	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:18:34	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:19:09	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:19:34	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:20:06	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:20:28	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:21:10	admin	http://pwx.local/	Saved module info caches
+2023-02-08 13:21:17	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:21:53	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:22:57	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:23:24	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:24:23	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:24:55	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:25:31	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:26:00	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:27:00	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:27:13	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:27:36	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:27:59	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:44:55	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:48:42	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:49:10	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:49:23	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:49:46	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:50:10	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:50:23	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:51:00	admin	http://pwx.local/test/test/table-includes	Saved module info caches
+2023-02-08 13:54:28	admin	http://pwx.local/test/test/table-includes	Saved module info caches

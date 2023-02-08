@@ -54,7 +54,7 @@
     </thead>
         <tbody>
         <tr id="replace" 
-            hx-get="/test/test/table-includes?static=1&cache=20"
+            hx-get="/test/test/table-includes"
             hx-select="#tbody"
             hx-trigger="load delay:1s"
             hx-target="closest tbody"

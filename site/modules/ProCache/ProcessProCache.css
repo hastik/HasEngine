@@ -1,0 +1,36 @@
+.content code {
+	border: 1px dotted #ddd;
+	font-size: 13px;
+}
+
+.content label code {
+	background-color: #ffffee;
+	color: #555;
+}
+
+.content .notes code {
+}
+
+input.lifespan {
+	width: 100px; 
+}
+
+.InputfieldContent pre {
+	color: #333;
+}
+
+.pwpc-off,
+tr.pwpc-off .pwpc-off-hide {
+	opacity: 0.1;
+}
+
+/*
+#cacheTemplatesTable tr td {
+	vertical-align: middle;
+}
+
+#wrap_Inputfield_cacheTemplates tr td {
+	vertical-align: middle;
+}
+*/
+

@@ -21,7 +21,9 @@ class Hypermedia{
 
     public $possiblePaths;
     
-    
+    public $time_start;
+    public $time_end;
+    public $time;
 
 
     public function __call($name, $args) {
@@ -74,9 +76,14 @@ class Hypermedia{
         
     }
 
+    function sget()
+
     function get($arg1, $arg2 = null, $arg3 = null){
 
-        if(is_array($arg2)){
+
+        $this->time_start = microtime(true);
+
+        if(is_array($arg2)){            
             $this->setInsertMethod($arg3);
             $this->setResourceFrom2($arg1,$arg2);
         }
@@ -113,6 +120,8 @@ class Hypermedia{
 
     function setResourceFrom2($path,$get){
 
+        
+
         $this->requestMethod = "GET";
 
         $this->get = $get;
@@ -136,16 +145,39 @@ class Hypermedia{
     }
 
 
+    function printTime(){
+        $time = round($this->time,4);
+        return "<div class='time'>$time</div>";
+    }
+
+    function printUrl(){
+
+        $san_url = $this->sanitized_url;
+        $url = $this->url;
+
+        return "<div class='time'><a href='$san_url'>$url</a></div>";
+    }
+
 
     function fetch(){
+
+
+        
+        $output = "";
         switch ($this->insertMethod){
             case "wire" :
-                return $this->fetchWire();            
+                $output = $this->fetchWire(); break;                           
             case "curl" :
-                return $this->fetchCurl();
+                $output = $this->fetchCurl(); break;
             case "include" :
-                return $this->fetchInclude();
+                $output = $this->fetchInclude();
         }
+
+        $this->time_end = microtime(true);
+        $this->time = $this->time_end - $this->time_start;        
+        
+        return $output;
+        
             
     }
 
@@ -238,8 +270,9 @@ class Hypermedia{
     }
 
     function fetchInclude(){
-
+        
         $page = $this->page;
+        
         $segment_string = str_replace($page->url, "",$this->path);
 
 		$activeSegments = $this->segmentsFromUrl($segment_string);

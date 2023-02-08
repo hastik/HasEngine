@@ -4,6 +4,10 @@
 // Template file for “home” template used by the homepage
 
 
+function printTime($time){
+	echo "<div class='time'>$time</div>";
+}
+
 
 $hypermedia = new Hypermedia; 
 
@@ -18,6 +22,14 @@ $hypermedia = new Hypermedia;
 <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
 
 <style>
+
+	.time{
+		background:yellow;
+		color: black;
+		padding:1em;
+		font-size: 0.6em;
+		font-weight: bold;
+	}
 
 	table td{ font-size: 0.6em;}
 
@@ -62,23 +74,21 @@ $hypermedia = new Hypermedia;
 
 
 	<?php 
-/*
-	wire("cache")->deleteAll();
 
+	wire("cache")->deleteAll();
+	
 	$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-foreach",
 	["selector" => "published=0,children.count>0",
 		"onpage" => "50",
 		"page"=>"1"],"wire")->fetch();
 	
-	bd($hypermedia);
+		echo $hypermedia->printTime();
+		echo $hypermedia->printUrl();
 	
-	$time_end = microtime(true);
-	$time = $time_end - $time_start;
-	dump($time);
 	echo $fragment;		
 
-*/
+
 ?>
 
 
@@ -93,17 +103,15 @@ $hypermedia = new Hypermedia;
 
 
   <?php  
-	$time_start = microtime(true);
+
 	$fragment = $hypermedia->get("/test/test/table-includes",
 	["selector" => "published=0,children.count>0",
 		"onpage" => "50",
 		"page"=>"1"],"wire")->fetch();
 	
-	//bd($hypermedia);
-	
-	$time_end = microtime(true);
-	$time = $time_end - $time_start;
-	dump($time);
+	echo $hypermedia->printTime();
+	echo $hypermedia->printUrl();
+
 	echo $fragment;		
 
 
@@ -120,22 +128,18 @@ $hypermedia = new Hypermedia;
   <h2>Foreach Wire</h2>
 
 
-  <?php  /*
-	$time_start = microtime(true);
-	$fragment = $hypermedia->get("/test/test/table-wire",
-	["selector" => "published=0,children.count>0",
-		"onpage" => "50",
-		"cache"=>"30"],"wire")->fetch();
-	//$cache->save("x",$fragment,5);
+  <?php  
+  
+	$fragment = $hypermedia->sget("test/test/table-wire//selector=count>4,limit=20&cache=20&onpage=4?selectable=4&live");
+	
 	
 	//bd($hypermedia);
 	
-	$time_end = microtime(true);
-	$time = $time_end - $time_start;
-	dump($time);
+	echo $hypermedia->printTime();
+	echo $hypermedia->printUrl();
 	echo $fragment;		
 
-*/
+
 ?>
 
 
@@ -146,7 +150,7 @@ $hypermedia = new Hypermedia;
   <h2>Foreach WireOnload</h2>
 
 
-  <?php /*
+  <?php 
 	$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-onload",
 	["selector" => "published=0,children.count>0",
@@ -155,11 +159,10 @@ $hypermedia = new Hypermedia;
 	
 	//bd($hypermedia);
 	
-	$time_end = microtime(true);
-	$time = $time_end - $time_start;
-	dump($time);
+	echo $hypermedia->printTime();
+	echo $hypermedia->printUrl();
 	echo $fragment;		
-*/
+
 
 ?>
 
@@ -169,23 +172,5 @@ $hypermedia = new Hypermedia;
 </div>
 
 
-
-<?php
-
-
-	$fragment = $hypermedia->get("/produkty/table/item?selector=published=0,children.count>0&onpage=50&page=1&cache=20","curl")->fetch();//->fetch();
-	bd($hypermedia);
-
-	echo $fragment;
-
-
-	$produkt = wire()->pages->get("/kontakt");
-	$fragment = $hypermedia->get("/kontakt/table/item?selector=published=0,children.count>0&onpage=50&page=1&cache=20",$produkt,"include")->fetch();//->fetch();
-	bd($hypermedia);
-
-	echo $fragment;
-
-	
-?>
 
 <hr>

@@ -1,0 +1,1831 @@
+<?php namespace ProcessWire;
+
+/**
+ * ProcessWire Pro Cache (Process)
+ *
+ * Copyright (C) 2020 by Ryan Cramer Design, LLC 
+ *
+ * This is a commercially licensed and supported module
+ * DO NOT DISTRIBUTE
+ *
+ * http://processwire.com/ProCache/
+ *
+ * @todo on behavior tab support option [blank] or 0 for "do not clear"
+ * 
+ * @method void processForm(InputfieldWrapper $form)
+ * @method InputfieldForm buildForm()
+ *
+ */
+
+class ProcessProCache extends Process {
+
+	/**
+	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+
+		return array(
+			'title' => 'ProCache', 
+			'version' => 403, 
+			'summary' => 'Configuration and maintenance utilty for the ProCache module',
+			'author' => 'Ryan Cramer Design, LLC',
+			'href' => 'https://processwire.com/ProCache/',
+			'icon' => 'fighter-jet',
+			'requires' => 'ProCache'
+		);
+	}
+
+	/**
+	 * instance of ProCache module that we are configuring
+	 * 
+	 * @var ProCache
+	 *
+	 */
+	protected $procache;
+
+	/**
+	 * @var array
+	 * 
+	 */
+	protected $labels = array();
+	
+	/**
+	 * Init ProCache Process
+	 *
+	 */
+	public function init() {
+		
+		$this->procache = $this->modules->get('ProCache');
+		$this->procache->getTable();
+		
+		$this->labels = array(
+			'yes' => $this->_('Yes'),
+			'no' => $this->_('No'),
+			'example' => $this->_('Example:') . ' ',
+			'default' => $this->_('(default)'), 
+			'details' => $this->_('details'), 
+			'defaultSetting' => $this->_('Default setting'),
+			'custom' => $this->_('Custom'), 
+			'customRules' => $this->_('Custom rules'),
+			'customTemplateSetting' => $this->_('(Uses custom settings defined with template)'),
+			'optional' => $this->_('(optional)'),
+			'needsConfig' => $this->_('ProCache needs configuration in modules section'),
+			'dirNotWritable' => $this->_('Directory %s is not writable — please make it writable to use ProCache'), 
+			'affectsHtaccess' => $this->_('This setting affects ProCache rules in your .htaccess file.'), 
+		);
+		
+		parent::init();
+	}
+
+
+	/**
+	 * Execute ProcessProCache, main 
+	 * 
+	 * @return string
+	 * @throws WireException
+	 *
+	 */
+	public function execute() {
+
+		if(!is_writable($this->wire()->config->paths->assets)) {
+			$this->error(sprintf($this->labels['dirNotWritable'], $this->wire()->config->urls->assets)); 
+		}
+		
+		$form = $this->buildForm();
+
+		if($this->input->post('submitSaveProCache')) {
+			$this->processForm($form);
+			$this->session->redirect('./');
+		}
+		
+		return $form->render() . $this->getVersionString(true);
+	}
+	
+	/**
+	 * Process ProCache configuration fields and populate to module
+	 * 
+	 * @param InputfieldForm $form
+	 *
+	 */
+	protected function ___processForm(InputfieldForm $form) {
+	
+		/** @var WireInput $input */
+		$input = $this->wire('input');
+		
+		$data = $this->modules->getModuleConfigData('ProCache'); 
+		$form->processInput($input->post);
+		
+		$skips = array(
+			'licenseKey',
+			'cacheClearCustom',
+			'cacheTemplates',
+		);
+
+		foreach($this->procache->data() as $key => $value) {
+			if(in_array($key, $skips)) continue;
+			$f = $form->getChildByName($key);
+			if(!$f) continue; 
+			$this->procache->set($key, $f->attr('value'));
+			$data[$key] = $this->procache->get($key);
+		}
+	
+		/** @var InputfieldTextarea $f */
+		$f = $form->getChildByName('cacheClearCustom');
+		$cacheClearCustom = $this->procache->getStatic()->getCacheClearBehaviorsStr(array(
+			'useAbbrs' => false,
+			'useTemplateIDs' => true,
+			'useComments' => false,
+			'cacheClearCustom' => $f->val(),
+		));
+		
+		$data['cacheClearCustom'] = $cacheClearCustom;
+		
+		$cacheTemplates = array();
+		$value = $input->post('cacheTemplates'); 
+		
+		if(is_array($value)) {
+			foreach($value as $id) {
+				$cacheTemplates[] = (int) $id;
+			}
+		}
+		
+		// make sure templates enabled in Template editor settings are also enabled in ProCache settings
+		foreach($this->wire()->templates as $template) {
+			if($template->cache_time < 0 && !in_array($template->id, $cacheTemplates)) {
+				$cacheTemplates[] = $template->id;
+			}
+		}
+		
+		$this->procache->set('cacheTemplates', $cacheTemplates);
+		$data['cacheTemplates'] = $cacheTemplates;
+
+		$this->modules->saveModuleConfigData('ProCache', $data);	
+		$this->message($this->_('Saved ProCache Settings'));
+	}
+
+	/**
+	 * Return ProCache configuration fields
+	 * 
+	 * @return InputfieldForm
+	 *
+	 */
+	protected function ___buildForm() {
+		
+		$modules = $this->wire()->modules;
+		$modules->get('JqueryWireTabs');
+
+		/** @var InputfieldForm $form */
+		$form = $modules->get('InputfieldForm');
+		$form->attr('id', 'ProcessProCache');
+		$form->attr('method', 'post');
+		$form->attr('action', './'); 
+		
+		$tabs = array(
+			'Status' => $this->_('Status'),
+			'Origin' => $this->_('Origin'),
+			'Lifespan' => $this->_('Lifespan'),
+			'Behavior' => $this->_('Behavior'),
+			'Bypass' => $this->_('Bypass'),
+			'Minify' => $this->_('Minify'),
+			'CDN' => $this->_('CDN'),
+			'Buster' => $this->_('Buster'),
+			'Tweaks' => $this->_('Tweaks'),
+			'More' => $this->_('Optimize'), 
+			'Tests' => $this->_('Tests'),
+		);
+		
+		foreach($tabs as $name => $label) {
+			$method = "buildFormTab$name";
+			$tab = new InputfieldWrapper();
+			$tab->attr('id', "ProcessProCache$name"); 
+			$tab->attr('title', $label);
+			$tab->attr('class', 'WireTab');
+			$form->add($tab);
+			$this->$method($tab);
+		}
+		/** @var InputfieldSubmit $f */	
+		$f = $modules->get('InputfieldSubmit');
+		$f->icon = 'fighter-jet';
+		$f->attr('id+name', 'submitSaveProCache'); 
+		$f->addClass('head_button_clone'); 
+		$form->add($f);
+
+		return $form; 
+	}
+
+	/**
+	 * Build "status" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 * 
+	 */
+	protected function buildFormTabStatus(InputfieldWrapper $tab) {
+	
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+
+		$cp = $this->procache->data('cachePrimed'); 
+		$fs = $this->procache->getHtaccess()->getFieldset();
+		if($fs) $tab->add($fs);
+
+		/*
+		$htAllow = $module->getHtaccess()->allowWrite();
+		if(is_bool($htAllow)) {
+			$f = $modules->get('InputfieldRadios');
+			$f->attr('name', 'htAllow');
+			$f->addOption(1, $yes);
+			$f->addOption(0, $no);
+			$f->attr('value', (int) $module->htAllow);
+			$f->label = $this->_('Allow ProCache to update .htaccess file automatically?');
+			$f->description = $this->_('When enabled, ProCache will attempt to make needed updates to your .htaccess file automatically, saving you from having to do it manually.');
+			$f->description .= ' ' . $this->_('If you use this option, please have a backup copy of your .htaccess file somewhere in case you need to restore it for any reason.');
+			$f->notes = $this->_('In production environments, we recommend you apply .htaccess changes manually for added safety.');
+			$f->icon = 'question-circle';
+			//$f->showIf = 'cacheOn=1';
+			$f->collapsed = Inputfield::collapsedYes;
+			$f->optionColumns = 1;
+			$tab->prepend($f);
+		}
+		*/
+
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'cacheOn');
+		$f->addOption(1, $this->labels['yes']);
+		$f->addOption(0, $this->labels['no']);
+		$f->attr('value', (int) $module->cacheOn);
+		$f->label = $this->_('ProCache enabled?');
+		$f->description = $this->_('This setting applies to all ProCache services.');
+		$f->icon = 'toggle-on';
+		$f->optionColumns = 1;
+		if(!$cp) throw new WireException($this->labels['needsConfig']);
+		if(!$fs) $f->notes = $this->_('The .htaccess file looks good for cached page delivery.');
+
+		$tab->add($f);
+	
+		// exit early if the cache is not currently on
+		if(!$module->cacheOn) return;
+
+		// FIELDSET: Cache status
+		$numCachedPages = $module->numCachedPages();
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('Cache status');
+		$fieldset->detail = $this->_('To test if cache is working, please see the “Tests” tab.'); 
+		$fieldset->icon = 'pie-chart';
+		$tab->add($fieldset);
+
+		if($numCachedPages && $this->input->post('_clearAll')) {
+			$module->clearAll();
+			$this->message($this->_('Cleared the cache'));
+			$numCachedPages = 0;
+		}
+
+		$cachePathLabel = $this->_('Cache path:') . ' ';
+
+		// clear cache now?
+		if($numCachedPages) {
+			/** @var InputfieldCheckbox $f */
+			$f = $modules->get('InputfieldCheckbox');
+			$f->attr('name', '_clearAll');
+			$f->attr('value', 0);
+			$f->label = $this->_('Document cache');
+			$f->label .= ' ' . sprintf($this->_n('(%d URL)', '(%d URLs)', $numCachedPages), $numCachedPages);
+			$f->label2 = $this->_('Clear the document cache?');
+			$f->description = $this->_('When you check this box and submit, the entire document cache will be cleared.');
+
+		} else {
+			/** @var InputfieldMarkup $f */
+			$f = $modules->get('InputfieldMarkup');
+			$f->label = $this->_('Document cache is empty');
+			$f->attr('value', '<p>' . $this->_('This is where you can clear the cache when it is populated.') . '</p>');
+			$f->collapsed = Inputfield::collapsedYes;
+		}
+		$f->notes = $cachePathLabel . $module->getCachePath();
+		
+		$fieldset->add($f);
+
+		$merger = $module->getFileMerger();
+		$filesCSS = $merger->getFiles('css');
+		$filesJS = $merger->getFiles('js');
+		$numCSS = count($filesCSS);
+		$numJS = count($filesJS);
+		$filesList = '';
+		$filesURL = $merger->getDestination(true);
+		$oldest = time();
+		$viewLabel = $this->_('view');
+		$numByPeriod = array();
+		$filesByPeriod = array();
+		$totalFiles = $numCSS + $numJS;
+		$table = $modules->get('MarkupAdminDataTable'); /** @var MarkupAdminDataTable $table */
+		$periods = array(
+			31536000 => $this->_('1 year'),
+			15552000 => $this->_('6 months'),
+			7776000 => $this->_('3 months'),
+			2592000 => $this->_('1 month'),
+			1209600 => $this->_('2 weeks'),
+			604800 => $this->_('1 week'),
+			84600 => $this->_('1 day'),
+		);
+		
+
+		if($totalFiles > 0) {
+			if($this->input->requestMethod('POST')) {
+				$clean = (int) $this->input->post('_clearMin');
+				$clearFiles = $this->input->post('_clearFiles');
+				if(is_array($clearFiles) && count($clearFiles)) {
+					$numFiles = $merger->clearFiles($clearFiles);
+					$this->message(sprintf($this->_('Cleared %d file(s) from merged/minified file cache'), $numFiles));
+				} else if($clean === 1) {
+					$merger->clear();
+					$this->message($this->_('Cleared the merged/minified file cache'));
+				} else if($clean > 1) {
+					$numCSS = $merger->clean('css', $clean);
+					$numJS = $merger->clean('js', $clean);
+					$this->message(sprintf(
+						$this->_('Cleared %1$d css and %2$d js files from file cache (newest versions left in place)'),
+						$numCSS, $numJS
+					));
+				}
+				return;
+			}
+			
+			$table->setEncodeEntities(false);
+			/** @var InputfieldCheckbox $checkbox */
+			$checkbox = $modules->get('InputfieldCheckbox');
+			$checkbox->attr('name', '_clearFiles[]'); 
+			$checkbox->label2 = '&nbsp;' . wireIconMarkup('trash-o');
+			$checkbox->entityEncodeLabel = false;
+			
+			foreach($filesCSS + $filesJS as $basename => $pathname) {
+				if(!is_file($pathname)) continue;
+				$ext = ltrim(substr($basename, -3), '.');
+				$mtime = filemtime($pathname);
+				if($mtime < $oldest) $oldest = $mtime;
+				foreach(array_keys($periods) as $seconds) {
+					$elapsed = time() - $seconds;
+					if($mtime <= $elapsed) {
+						if(!isset($numByPeriod[$seconds])) {
+							$numByPeriod[$seconds] = 0;
+							$filesByPeriod[$seconds] = array();
+						}
+						$numByPeriod[$seconds]++;
+						$filesByPeriod[$seconds][] = $basename;
+					}
+				}
+				$relTime = wireDate('relative', $mtime);
+				$date = wireDate('Y/m/d H:i', $mtime);
+				$bytes = filesize($pathname);
+				if($bytes > 1024) $bytes .= " (" . wireBytesStr($bytes) . ")";
+				$filesList .= "\n• **$ext:** $basename ($bytes) $relTime ([$viewLabel]($filesURL$basename))";
+				$checkbox->attr('value', $basename);
+				$table->row(array(
+					$ext, 
+					"<a target='_blank' href='$filesURL$basename'>$basename</a>", 
+					$bytes, 
+					$date, 
+					$relTime,
+					$checkbox->render(),
+				)); 
+			}
+			/** @var InputfieldRadios $f */
+			$f = $modules->get('InputfieldSelect');
+			$f->attr('name', '_clearMin');
+			$f->label = $this->_('Merged/minified file cache');
+			$f->label .= ' (' .
+				sprintf($this->_n('%d CSS file', '%d CSS files', $numCSS), $numCSS) . ', ' .
+				sprintf($this->_n('%d JS file', '%d JS files', $numJS), $numJS) .
+				')';
+			$f->addOption('', $this->_('Clear files?'));
+			$f->addOption(1, $this->_('Clear ALL files') . " ($totalFiles)");
+			// $f->label2 = $this->_('Clear the merged/minified file cache?');
+			ksort($numByPeriod);
+			$lastFiles = array();
+			foreach($filesByPeriod as $seconds => $files) {
+				$qty = count($files);
+				if($qty === $totalFiles || $files === $lastFiles) continue;
+				$label = $periods[$seconds];
+				$f->addOption($seconds, sprintf($this->_('Clear %s or older files'), $label) . " ($qty)");
+				$lastFiles = $files;
+			}
+		} else {
+			$f = $modules->get('InputfieldMarkup');
+			$f->label = $this->_('Merged/minified file cache is empty');
+			$f->attr('value', '<p>' . $this->_('This is where you can clear the merged/minified file cache when it is populated.') . '</p>');
+		}
+
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->description = $this->_('Cached files are automatically re-created whenever the parent CSS or JS file is modified.');
+		$f->description .= ' ' . $this->_('When clearing this, we strongly recommend you also clear the document cache (above) so that you do not have cached HTML documents referencing CSS or JS files that no longer exist.'); // CSS/JS cached files description 3
+		$f->notes = $cachePathLabel . str_replace($this->config->paths->root, '/', $merger->getDestination()); // $filesList;
+	
+		if($totalFiles) {
+			$table->setSortable(false);
+			$table->headerRow(array(
+				$this->_x('Ext', 'th'),
+				$this->_x('File', 'th'),
+				$this->_x('Size', 'th'),
+				$this->_x('Date', 'th'),
+				$this->_x('Age', 'th'),
+				'',
+			));
+			$f->appendMarkup = $table->render();
+		}
+	
+		$fieldset->add($f);
+	}
+
+	/**
+	 * Build the "origin" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 * 
+	 */
+	protected function buildFormTabOrigin(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$config = $this->wire()->config;
+		$module = $this->procache;
+		
+		// FIELDSET: Maximum age of cache
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('What to cache');
+		$fieldset->icon = 'sliders';
+
+		$fieldset->add($this->buildOriginTable());
+
+		// URL segment support
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'urlSegments');
+		$f->attr('value', (int) $module->urlSegments);
+		$f->label = $this->_('Number of URL segment levels to cache');
+		$f->optionColumns = 1;
+		$f->description = $this->_('If any templates in your site use URL segments, the resulting URLs can be cached as well. Choose the number of URL segments you want to be cacheable. Do not select more URL segments than you are actually using and checking for in your template file.');
+		$f->notes = $this->_('Warning: before enabling this option, you should make sure that your template files throw a 404 when they come across an unknown URL segment. Otherwise there is no limit to the number of cache files that could be generated as a result (possible resources concern).');
+		$f->notes .= ' '. $this->labels['example'] . '`if($input->urlSegment1 != "photos") throw new Wire404Exception();`';
+		for($n = 0; $n <= $config->maxUrlSegments; $n++) $f->addOption($n);
+		$fieldset->add($f);
+
+		// HTTPS support
+		/** @var InputfieldCheckbox $f */
+		$f = $modules->get('InputfieldCheckbox');
+		$f->attr('name', 'https');
+		$f->attr('value', 1);
+		if($module->https) $f->attr('checked', 'checked');
+		$f->label = $this->_('HTTPS requests');
+		$f->label2 = $this->_('Cache HTTPS requests separately?');
+		$f->description = $this->_('If you are using both HTTP and HTTPS on your server, you may wish to cache HTTPS requests separately from HTTP requests if there are any changes in the outputted markup between HTTP and HTTPS requests.'); // HTTPS option description
+		$f->notes = $this->_('If you just deliver via only HTTPS (or only HTTP), then do not check this box.'); 
+		if(!$module->https) $f->collapsed = Inputfield::collapsedYes;
+		$fieldset->add($f);
+
+		// Multi-host support
+		$hosts = $config->httpHosts;
+		if(!count($hosts)) $hosts = array($config->httpHost);
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'cacheHosts');
+		foreach($hosts as $host) $f->addOption($host, $host);
+		$f->attr('value', $module->cacheHosts);
+		$f->label = $this->_('Hostnames');
+		$f->description = $this->_('Check boxes for each hostname you wish to cache separately. If none are checked, then the request hostname will be disregarded (all hosts be cached together).'); // Hosts description
+		$f->notes = $this->_('These are the hostnames listed in your $config->httpHosts setting. To add more hosts, edit your /site/config.php file.'); // Hosts notes
+		$f->collapsed = Inputfield::collapsedBlank;
+		$fieldset->add($f);
+
+		$f = $modules->get('InputfieldText');
+		$f->attr('name', 'docRootPath');
+		$f->label = $this->_('Server document root path to domain/host');
+		$f->description =
+			$this->_('This should be left blank unless page delivery from the cache does not appear to be working.') . ' ' .
+			$this->_('If specified, note that this is a server file path to the *domain* root, not a URL.') . ' ' .
+			$this->_('The path is used instead of the Apache `%{DOCUMENT_ROOT}` variable in the .htaccess file.');
+
+		$dir = __DIR__;
+		$_dir_ = '__' . 'DIR' . '__';
+		$f->notes = $this->_('Document root path detected by different methods:') . "\n" .
+			'[u]' . (isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '') . '[/u] - via $_SERVER[DOCUMENT_ROOT]' . "\n" .
+			'[u]' . substr($config->paths->root, 0, -1 * strlen($config->urls->root)) . '[/u] - via $config'; 
+		if(strpos($dir, $config->urls('ProCache'))) {
+			$f->notes .= "\n[u]" . substr($dir, 0, -1 * strlen($config->urls('ProCache')) + 1) . '[/u] - via PHP’s ' . $_dir_;
+		}
+		
+
+		$f->collapsed = Inputfield::collapsedBlank;
+		$f->attr('value', $module->docRootPath);
+		$fieldset->add($f);
+
+		$tab->add($fieldset);
+	}
+	
+	/**
+	 * Build the “Origin” tab Table
+	 * 
+	 * @return InputfieldMarkup
+	 * 
+	 */
+	protected function buildOriginTable() {
+		
+		$behaviorLabels = array(
+			ProCache::CACHE_CLEAR_SELF => $this->_x('Self', 'behavior'),
+			ProCache::CACHE_CLEAR_NOSELF => $this->_x('No-Self', 'behavior'),
+			ProCache::CACHE_CLEAR_FAMILY => $this->_x('Family', 'behavior'),
+			ProCache::CACHE_CLEAR_CHILDREN => $this->_x('Children', 'behavior'),
+			ProCache::CACHE_CLEAR_PARENTS => $this->_x('Parents', 'behavior'),
+			ProCache::CACHE_CLEAR_HOME => $this->_x('Home', 'behavior'),
+			ProCache::CACHE_CLEAR_SITE => $this->_x('Site', 'behavior'),
+			ProCache::CACHE_CLEAR_PAGES => $this->labels['custom'],
+			ProCache::CACHE_CLEAR_SELECTOR => $this->labels['custom'],
+			ProCache::CACHE_CLEAR_REFERENCES => $this->_x('References', 'behavior')
+		);
+
+		/** @var ProCache $module */
+		$module = $this->procache;
+		
+		/** @var Modules $modules */
+		$modules = $this->wire('modules');
+		
+		/** @var MarkupAdminDataTable $table */
+		$table = $modules->get('MarkupAdminDataTable');
+		$table->setEncodeEntities(false);
+	
+		/** @var InputfieldMarkup $f */
+		$f = $modules->get('InputfieldMarkup');
+		$f->label = $this->_('Cache Templates');
+		$f->description = $this->_('Pages using checked templates will be delivered with ProCache when applicable.');
+		$table->headerRow(array(
+			$this->_x('Template Name', 'origin-th'),
+			$this->_x('Pages', 'origin-th'),
+			$this->_x('Lifespan/Secs', 'origin-th'),
+			$this->_x('Clear Pages Behavior', 'origin-th')
+		));
+
+		$cacheTimes = $module->getStatic()->getCacheTime();
+		$cacheBehaviors = $module->getStatic()->getCacheClearBehaviors();
+		$hasTemplateCacheConfig = false;
+		
+		foreach($this->wire('templates') as $t) {
+
+			/** @var Template $t */
+			if($t->name == 'admin' || !$t->filenameExists()) continue;
+
+			$enabled = in_array($t->id, $module->cacheTemplates);
+			if($t->cache_time < 0) {
+				if(!$enabled) {
+					$cacheTemplates = $module->cacheTemplates;
+					$cacheTemplates[] = $t->id;
+					$module->cacheTemplates = $cacheTemplates;
+				}
+				$enabled = true;
+				$hasTemplateCacheConfig = true;
+			}
+
+			$templateLabel = $t->getLabel();
+			$templateName = $enabled ? "<strong>$t->name</strong>" : $t->name;
+			if($t->name == $templateLabel) {
+				$templateLabel = $templateName;
+			} else {
+				$templateLabel = "$templateName (" . $this->wire('sanitizer')->entities($templateLabel) . ")";
+			}
+			if($t->cache_time < 0) $templateLabel .= '¹';
+
+			$numPages = $this->wire('templates')->getNumPages($t);
+
+			if($enabled) {
+				$lifespan = isset($cacheTimes[$t->name]) ? $cacheTimes[$t->name] : $module->cacheTime;
+				//if($lifespan == $module->cacheTime) $lifespan = '';
+			} else {
+				$lifespan = '';
+			}
+		
+			$behaviors = isset($cacheBehaviors[$t->name]) ? $cacheBehaviors[$t->name] : array();
+			$behaviorsStr = '';
+			
+			foreach($behaviors as $behavior => $details) {
+				if($behavior === ProCache::CACHE_CLEAR_SELF) continue;
+				$behaviorLabel = $behaviorLabels[$behavior];
+				/*
+				if(is_array($details)) {
+					$behaviorLabel .= " (" . implode(',', $details) . ")";
+				} else if(is_string($details)) {
+					$behaviorLabel .= " (" . $this->wire()->sanitizer->entities($details) . ")";
+				}
+				*/
+				$behaviorsStr .= ($behaviorsStr ? " + " : "") . $behaviorLabel;
+			}
+			
+			/** @var InputfieldCheckbox $checkbox */
+			$checkbox = $modules->get('InputfieldCheckbox');
+			$checkbox->attr('name', 'cacheTemplates[]'); 
+			$checkbox->attr('value', $t->id); 
+			$checkbox->label = ' ';
+			if($enabled) $checkbox->attr('checked', 'checked'); 
+			$checkbox = $checkbox->render();
+		
+			$table->row(array(
+				"<label>$checkbox $templateLabel</label>", 
+				$numPages, 
+				$lifespan,
+				$behaviorsStr
+			));
+
+		}
+
+		$f->attr('value', $table->render());
+		if($hasTemplateCacheConfig) {
+			$f->notes = '¹ ' . $this->_('Indicated templates have ProCache enabled and configured from the template settings.');
+			$f->notes .= ' ' . $this->_('To change settings or disable caching, edit the template and click the Cache tab (Setup > Templates).');
+		}
+
+		return $f;
+	}
+	
+	/**
+	 * Build the "lifespan" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabLifespan(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+		
+		// FIELDSET: Maximum age of cache
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('How long to cache');
+		$fieldset->icon = 'clock-o';
+
+		// cacheTime
+		/** @var InputfieldInteger $f */
+		$f = $modules->get('InputfieldInteger');
+		$f->attr('name', 'cacheTime');
+		$f->label = $this->labels['defaultSetting'];
+		$f->description = $this->_('Enter the maximum age of a page cache in seconds. Minimum is 30 seconds.');
+		$f->notes = $this->labels['example'] . $this->_('60=1 minute, 600=10 minutes, 3600=1 hour, 86400=1 day, 604800=1 week');
+		$f->attr('value', $module->cacheTime >= 30 ? $module->cacheTime : 3600);
+		$fieldset->add($f);
+
+		// cacheTime by template
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'cacheTimeCustom');
+		$f->label = $this->labels['customRules'];
+		$f->description = $this->_('If you want to use a different max age of cache on a per-template basis, enter one per line of "template=seconds", where "template" is the name of the template and "seconds" is the maximum age in seconds. Any rules you specify here will override the default setting above for pages using the specified templates.'); // Custom lifetime description
+		$f->description .= ' ' . $this->_('Lines prefixed with `#` are commented out and thus ignored—they are for your reference, or you may un-comment and modify any line to include it in your custom rules.');
+		$f->notes =
+			$this->labels['example'] . '`' . $this->_('basic-page=60') . "`\n" .
+			$this->_('**Helpful Tip:** You can also specify per-template cache lifetime settings (and more) by editing a template (in Setup > Templates), clicking the Cache tab, and enabling ProCache from there. Settings specified there override those specified here.'); // Helpful tip about template editor
+		$value = $module->getStatic()->getCacheTimesStr();
+		$value = str_replace('(@template)', $this->labels['customTemplateSetting'], $value);
+		$f->attr('value', $value);
+		$f->attr('rows', substr_count($value, "\n")+1);
+		$fieldset->add($f);
+		$tab->add($fieldset);
+	}
+	
+	/**
+	 * Build the "behavior" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabBehavior(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+		
+		$behaviorOptions = array(
+			ProCache::CACHE_CLEAR_SITE => '[code]A.[/code] ' . $this->_('Reset cache for all (entire site)'),
+			ProCache::CACHE_CLEAR_CHILDREN => '[code]C.[/code] ' . $this->_('Reset cache for children of saved page (and all below)'),
+			ProCache::CACHE_CLEAR_FAMILY => '[code]F.[/code] ' . $this->_('Reset cache for family of saved page — parent, siblings, children (and all below)'),
+			ProCache::CACHE_CLEAR_HOME => '[code]H.[/code] ' . $this->_('Reset cache for homepage'),
+			ProCache::CACHE_CLEAR_PARENTS => '[code]P.[/code] ' . $this->_('Reset cache for all parents of saved page, except homepage'),
+			ProCache::CACHE_CLEAR_REFERENCES => '[code]R.[/code] ' . $this->_('Reset cache for pages that reference saved page'),
+			ProCache::CACHE_CLEAR_NOSELF => '[code]X.[/code] ' . $this->_('Do not reset cache for saved page (does not work with A, C or F)'),
+		);
+
+		// FIELDSET: Page saving and cache behavior
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('Cache clearing behaviors');
+		$fieldset->icon = 'tasks';
+		$fieldset->detail = $this->_('To test your behavior settings, see the “Tests” tab.');
+		$tab->add($fieldset);
+
+		// cacheClear
+		$cacheClearLabel = $this->_('What should happen when a page is saved?');
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'cacheClear');
+		$f->label = $cacheClearLabel . ' ' . $this->labels['default'];
+		$f->description =
+			$this->_('When a page is saved, its own cache will always be reset/cleared (if it has one).') . ' ' .
+			$this->_('Select what other pages should be reset/cleared below.');
+		//$f->notes = $this->_('If you want to define custom behaviors per template or page, see the field below this one.'); 
+		foreach($behaviorOptions as $value => $label) {
+			$f->addOption($value, $label);
+		}
+		$f->attr('value', $module->cacheClear);
+		$fieldset->add($f);
+
+		// cacheClear by template
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'cacheClearCustom');
+		$value = $module->getStatic()->getCacheClearBehaviorsStr(array(
+			'useAbbrs' => true,
+			'useTemplateIDs' => false,
+			'useComments' => true,
+		));
+		$value = str_replace('(@template)', $this->labels['customTemplateSetting'], $value);
+		$f->attr('value', $value);
+		$f->attr('rows', substr_count($f->val(), "\n")+1);
+		$f->label = $cacheClearLabel . ' ' . $this->_('(custom rules per template)');
+		$f->description =
+			$this->_('If you want to use a different behavior on a per-template basis, enter one per line of `template=C`, where "template" is the name of the template, and "C" is one or more behavior codes, as indicated above.') . ' ' .
+			$this->_('For example, `basic-page=CHP` would refer to clearing Children, Homepage, and Parents of pages using the "basic-page" template.') . ' ' .
+			$this->_('Lines prefixed with a hash `#` indicate cached templates that do not have custom rules. Remove the hash and edit the line to add custom rules.');
+		$f->detail = '**' . $this->_('Advanced options:') . '** ' .
+			$this->_('To clear page IDs 123 and 456 (for example), specify `template=pages:123,456`.') . ' ' .
+			$this->_('To clear pages matching selector `a=b,c=d`, specify `template=pages:a=b,c=d` .') . ' ' .
+			$this->_('For example, the line `basic-page=FH pages:parent=/products/,include=all` would clear Family and Homepage, as well as all pages having parent `/products/`, whenever a page having template `basic-page` is saved.') . ' ' .
+			$this->_('Settings specified here override the default setting above.') . ' ' . 
+			$this->_('You can also configure per-template behaviors from the template editor “Cache” tab.');
+
+		$f->collapsed = Inputfield::collapsedBlank;
+		$fieldset->add($f);
+
+		// cacheClear off
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'cacheClearOff');
+		$f->label = $this->_('When do you want to skip (disable) the cache clearing behaviors?');
+		$f->addOption(ProCache::CACHE_CLEAR_OFF_TEMPLATE, $this->_('When saved page uses template that is not configured to be cached in ProCache'));
+		$f->addOption(ProCache::CACHE_CLEAR_OFF_SYSTEM, $this->_('When saved page uses a system template (admin, user, role, permission, etc.)'));
+		$f->addOption(ProCache::CACHE_CLEAR_OFF_SITE, $this->_('When page is saved from the API on the site (rather than interactively in the admin)'));
+		$f->attr('value', $module->cacheClearOff);
+		$fieldset->add($f);
+	
+	}
+
+	/**
+	 * Build the "bypass" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabBypass(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$config = $this->wire()->config;
+		$module = $this->procache;
+		
+		// FIELDSET: When to bypass the cache
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('When to skip the cache');
+		$fieldset->description = $this->_('Sometimes you don\'t want to display a cached page, especially when processing user input or generating output specific to a user session. For this reason, the cache is always skipped when a populated POST request occurs. Below you may specify GET and COOKIE variables that also cause the cache to be skipped over.');
+		$fieldset->icon = 'eye-slash';
+		$tab->add($fieldset);
+
+		// GET variables that bypass the cache
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('id+name', 'noCacheGetVars');
+		$f->attr('value', $module->noCacheGetVars);
+		$f->label = $this->_('GET variables that skip the cache');
+		$f->description = $this->_('Enter a list of GET variable names (1 per line) that will bypass the cache. You may also leave blank to ignore all GET vars, or enter an asterisk "*" to bypass the cache for all GET vars.');
+		$f->notes = $this->_('Specifying an asterisk "*" is recommended to start. If you specify your own GET variables and are using the ProcessWire comments module, you should enter "comment_success" as one of them below.');
+		$fieldset->add($f);
+
+		// cookies that bypass the cache
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('id+name', 'noCacheCookies');
+		$f->attr('value', $module->noCacheCookies);
+		$f->label = $this->_('Cookies that bypass the cache');
+		$f->description = $this->_('Enter a list of cookie names (1 per line) that will bypass the cache. When the user has any of these cookies present, the cache will be disabled for them.');
+		
+		$cookieName = $config->sessionName . '_challenge';
+		$cookieNames = array($cookieName => $cookieName);
+		
+		if($config->sessionNameSecure) {
+			$cookieName = $config->sessionNameSecure;
+			$cookieNames[$cookieName] = $cookieName;
+		} else {
+			$cookieName = $config->sessionName . 's_challenge';
+			$cookieNames[$cookieName] = $cookieName;
+		}
+		
+		$f->notes = 
+			$this->_('We recommend that you at least have the ProcessWire session cookie(s):') . " " .
+			"`" . implode("`, `", $cookieNames) . '`';
+		
+		if(empty($_POST) && $config->https) {
+			foreach(explode("\n", $module->noCacheCookies) as $cookieName) {
+				unset($cookieNames[trim($cookieName)]);
+			}
+			if(count($cookieNames)) {
+				$this->warning(sprintf($this->_('The setting “%s” is missing the session cookie(s):'), $f->label) . ' ' .
+					implode(', ', $cookieNames)
+				);
+			}
+		}
+		
+		$fieldset->add($f);
+	}
+	
+	/**
+	 * Build the "minify" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabMinify(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$sanitizer = $this->wire()->sanitizer;
+		$module = $this->procache;
+		
+		$tags = array();
+		foreach(array('script', 'style', 'head', 'body', 'link', 'input', 'input type=text', 'tag /', 'tag') as $tag) {
+			$tags[$tag] = '`<' . $tag . '>`';
+		}
+
+		// Minify options
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'minifyOptions');
+		$f->icon = 'compress';
+		$f->label = $this->_('Minify options');
+		$f->addOption('htmlGuest', $this->_('Minify HTML for guests'));
+		$f->addOption('htmlUsers', $this->_('Minify HTML for logged-in users'));
+		$f->addOption('htmlCache', $this->_('Minify HTML only for pages that will be saved to ProCache static files') . '¹');
+		$f->addOption('cssHead', sprintf($this->_('Merge and minify local CSS %1$s files in document %2$s'), $tags['link'], $tags['head']) . '² ' .
+			'[span.detail] ' . $this->_('(also works with SCSS or LESS files)') . ' [/span]');
+		$mergeAndMinifyLabelJS = $this->_('Merge and minify local Javascript %1$s files in document %2$s');
+		$f->addOption('jsHead', sprintf($mergeAndMinifyLabelJS, $tags['script'], $tags['head']) . '²');
+		$f->addOption('jsBody', sprintf($mergeAndMinifyLabelJS, $tags['script'], $tags['body']) . '²');
+		$f->addOption('useTemplates', $this->_('Apply above choices only to certain templates') . '³');
+		$f->attr('value', $module->minifyOptions);
+		$f->notes = '¹ ' . $this->_('This option is provides a good balance for performance since there is a slight overhead with HTML minification. When used, it overrides the "Minify HTML for guests" and "Minify HTML for logged-in users" options.'); // htmlCache notes
+		$f->notes .= "\n² " . $this->_('CSS and JS minification options apply regardless of Minify HTML options.'); // Inline CSS/JS minify notes 1
+		$f->notes .= " " . $this->_('If there is a CSS/JS file you want merge/minify options to ignore, append "?NoMinify" to the end of the filename in your HTML.'); // Inline CSS/JS minify notes 2
+		$f->notes .= " " . $this->_('If you prefer to apply CSS/JS merge and minify options from the API instead (for more control), see the API merge and minify usage below.'); // Inline CSS/JS minify notes 3
+		$f->notes .= " " . $this->_('Do not use this setting if the js/css files change from page to page.'); // Inline CSS/JS minify notes 4
+		$f->notes .= "\n³ " . $this->_('When checked, a box will appear further on this page where you can select the templates. If not checked, all settings above apply to all templates that output content-type "text/html" (which is what we recommend).'); // useTemplates notes
+		$tab->add($f);
+
+		// API minify usage
+		/** @var InputfieldMarkup $f */
+		$f = $modules->get('InputfieldMarkup');
+		$f->label = $this->_('How to use minify from the API for JS, CSS, SCSS or LESS files');
+		$f->icon = 'code';
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->value = "<p>" .
+			sprintf($this->_('Files can be merged and minified from the API, which gives you more control compared to using auto-detection of %s or %s tags.'), '&lt;link&gt;', '&lt;script&gt;') . '² ' .
+			$this->_('To do this, do not select the CSS/JS “Merge” options above and instead use the built-in API methods for JS, CSS, or both; described below.') . ' ' .
+			$this->_('SCSS and LESS files are automatically compiled and may be substituted for any CSS file mentioned here.') . ' ' .
+			$this->_('The $procache->css() and $procache->js() methods output the minified filename. Pass them an array or CSV string of URLs/filenames to merge and minify:') .
+			"</p><pre>" .
+			$sanitizer->entities(
+				"  <link rel=\"stylesheet\" href=\"<?= \$procache->css(['styles/a.css', 'styles/b.scss', 'styles/c.less']) ?>\">\n" .
+				'  <script src="<?= $procache->js([\'scripts/a.js\', \'scripts/b.js\']) ?>"></script>'
+			) .
+			"</pre><p>" .
+			$this->_('The following is the same as above, but using a CSV string for the list of files, rather than an array:') .
+			"</p><pre>" .
+			$sanitizer->entities(
+				"  <link rel=\"stylesheet\" href=\"<?= \$procache->css('styles/a.css, styles/b.scss, styles/c.less') ?>\">\n" .
+				"  <script src=\"<?= \$procache->js('scripts/a.js, scripts/b.js') ?>\"></script>"
+			) . "</pre><p>" .
+			$sanitizer->entities1(
+				sprintf(
+					$this->_('The link() and script() methods work the same as the css() and js() methods, except that they output the entire %1$s or %2$s tag, which might save you a step:'),
+					trim($tags['link'], '`'),
+					trim($tags['script'], '`')
+				)
+			) .
+			"</p><pre>" .
+			$this->wire('sanitizer')->entities(
+				'  <?= $procache->link("styles/a.css, styles/b.scss, styles/c.less") ?>' . "\n" .
+				'  <?= $procache->script("scripts/a.js, scripts/b.js") ?>'
+			)  . "</pre>";
+		$f->notes =
+			$this->_('Provided files may be a CSV string of file URLs or an array of file URLs.') . ' ' .
+			$this->_('File URLs that do not begin with a slash "/" are assumed to be relative to /site/templates/.') . ' ' .
+			$this->_('Avoid different combinations of files that vary according to page/template, as this will create multiple minified files with potentially redundant content.') . ' ' .
+			$this->_('If you need files to be added in some cases and not others, then use a completely separate call for those files.');
+		// $this->_('To merge without minify, specify `false` as the second argument to any of the methods above.'); 
+		$tab->add($f);
+
+		// Minify HTML fieldset
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('Minify HTML');
+		$fieldset->icon = 'html5';
+		$fieldset->showIf = 'minifyOptions=htmlGuest|htmlUsers|htmlCache';
+		$tab->add($fieldset);
+
+		// minifyTemplates
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'minifyTemplates');
+		$f->label = $this->_('Template files');
+		$f->description = $this->_('Pages using checked templates will be delivered with the selected minify options.');
+		foreach($this->wire('templates') as $t) {
+			if($t->contentType && $t->contentType != 'html') continue;
+			if($t->name == 'admin' || !$t->filenameExists()) continue;
+			$f->addOption($t->id, $t->name);
+		}
+		$f->attr('value', $module->minifyTemplates);
+		$f->showIf = 'minifyOptions=useTemplates';
+		$f->optionColumns = 3;
+		$tab->add($f);
+
+
+		// minifyHTMLOptions
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'minifyHTMLOptions');
+		$f->label = $this->_('Minify HTML options');
+		$f->addOption('uncomment', $this->_('Strip HTML comments (strongly recommended)'));
+		$f->addOption('unquote', $this->_('Remove quotes from tag attributes where allowed (for HTML5 output only)'));
+		$f->addOption('noXHTML', sprintf($this->_('Shorten self closing XHTML-style closing tags (i.e. %1$s to %2$s)'), $tags['tag /'], $tags['tag']));
+		$f->addOption('untag', $this->_('Remove optional tags per HTML5 specifications ([details](http://www.w3.org/TR/2014/REC-html5-20141028/syntax.html#optional-tags))'));
+		$f->addOption('unattr', sprintf($this->_('Remove unnecessary assumed attributes (i.e. %1$s to %2$s, and so on)'), $tags['input type=text'], $tags['input']));
+		$f->addOption('unbool', $this->_('Collapse redundant boolean attributes (i.e. `selected=selected` to `selected`, and so on)') . '¹');
+		$f->addOption('unblank', sprintf($this->_('Remove some blank attributes, customizable (default=`%s`)'), 'class dir for id lang style title'));
+		$f->addOption('hrefs', $this->_('Convert absolute `href` attributes to relative when relative is shorter (see note)') . '²');
+		$f->addOption('js', sprintf($this->_('Use JS minifier on inline %s tags'), $tags['script']) . '³');
+		$f->addOption('css', sprintf($this->_('Use CSS minifier on inline %s tags'), $tags['style']) . '³');
+		$f->notes .= "¹ " . $this->_('Collapsing boolean attributes is recommended, unless you are using CSS/JS selectors that target the attribute value (i.e. `input[checked=checked]`) rather than the attribute itself (i.e. `input[checked]`).'); // Notes for unbool option
+		$f->notes .= "\n² " . $this->_('Conversion of href attributes is not recommend on sites that use a mixture of trailing and non-trailing slashes for pages, and may cause issues when a given page is viewed with the incorrect URL (slashed vs. non-slashed).'); // Notes for hrefs option
+		$f->notes .= "\n³ " . sprintf($this->_('To skip a particular %1$s or %2$s block, place the word %3$s somewhere within it, like in a comment.'), $tags['script'], $tags['style'], '`' . 'NoMinify' , '`'); // Notes for skipping script or style blocks
+		$f->attr('value', $module->minifyHTMLOptions);
+		$fieldset->add($f);
+
+		$separateNote = $this->_('Separate items with a space or new line.');
+
+		// minifyIgnoreTags
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'minifyIgnoreTags');
+		$f->label = $this->_('Do not minify content within these HTML tags');
+		$f->description = $this->_('Output within these HTML tag blocks will be left alone.') . ' ' . $separateNote;
+		$f->notes = $this->_('You can also exclude any sections of your document from minification by surrounding it with NoMinify comments:');
+		$f->notes .= "\n" . "`<!--NoMinify-->\n\t" . $this->_('This content will not be minified') . "\n<!--/NoMinify-->`";
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->attr('value', $module->minifyIgnoreTags);
+		$fieldset->add($f);
+
+		// minifyBlocks
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'minifyBlocks');
+		$f->label = $this->_('Collapse whitespace around these tags');
+		$f->description = $this->_('These are typically block-level tags, where whitespace between them will be collapsed completely. For tags that do not appear here, a single whitespace will be left when present in the original output.'); // minifyBlocks description
+		$f->description .= ' ' . $separateNote;
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->attr('value', $module->minifyBlocks);
+		$fieldset->add($f);
+
+		// minifyRemoveBlankAttr
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'minifyRemoveBlankAttr');
+		$f->label = $this->_('Remove these HTML tag attributes when they are blank');
+		$f->description = $this->_('This will completely remove the attributes you specify here, when they are blank.'); // minifyRmBlankAttr description
+		$f->description .= ' ' . $separateNote;
+		$f->notes = $this->_('This setting configures the "Remove some blank attributes" option you selected above.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->attr('value', $module->minifyRemoveBlankAttr);
+		$f->showIf = 'minifyHTMLOptions=unblank';
+		$fieldset->add($f);
+
+		// Minify CSS fieldset
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('Minify CSS');
+		$fieldset->showIf = 'minifyOptions=cssHead';
+		$tab->add($fieldset);
+
+		// minifyMaxImportCSS
+		/** @var InputfieldInteger $f */
+		$f = $modules->get('InputfieldInteger');
+		$f->attr('name', 'minifyMaxImportCSS');
+		$f->label = $this->_('Max background image file size to merge in CSS files');
+		$f->description = $this->_('Background image files up-to this many kilobytes will be merged directly into the CSS file (base64 encoded). This reduces HTTP requests, but is mostly beneficial only with smaller file sizes.');
+		$f->notes = $this->_('5 means 5 kB which is the default value. Specify 0 to disable.');
+		$f->attr('value', $module->minifyMaxImportCSS);
+		$fieldset->add($f);
+	}
+	
+	/**
+	 * Build the "CDN" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabCDN(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+		
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'cdnStatus');
+		$f->label = $this->_('CDN status');
+		$f->description = sprintf($this->_('ProCache CDN features work with any CDN provider that supports [origin-pull](%s). For more details about using a CDN with ProCache, please see [ProCache CDN integration](https://processwire.com/api/modules/procache/cdn/).'),
+			'https://processwire.com/api/modules/procache/cdn/#what-is-an-origin-pull-cdn',
+			'https://processwire.com/api/modules/procache/cdn/');
+		$f->notes = $this->_('When enabled, the "CDN host setup" field below must also be populated before the CDN will be active.');
+		$f->addOption(ProCache::CDN_STATUS_OFF, $this->_('Disabled'));
+		$f->addOption(ProCache::CDN_STATUS_ALL, $this->_('Enabled for all (recommended)'));
+		$f->addOption(ProCache::CDN_STATUS_GUEST, $this->_('Enabled for guest visitors only'));
+		$f->addOption(ProCache::CDN_STATUS_USERS, $this->_('Enabled for logged-in users only'));
+		$f->attr('value', $module->cdnStatus);
+		$f->icon = 'toggle-on';
+		$tab->add($f);
+
+		/** @var InputfieldTextarea $f */
+		$f = $modules->get('InputfieldTextarea');
+		$f->attr('name', 'cdnHosts');
+		$f->attr('value', $module->cdnHosts);
+		$f->label = $this->_('CDN host setup');
+		$f->icon = 'cloud-upload';
+		$f->description = $this->_('Enter one or more lines of: **/path/ = your.cdn.com**, where **/path/** is the local starting path (pull origin) you want served by the CDN (typically **/site/**), and **your.cdn.com** is the CDN hostname (and optionally path) you want to map those assets to.');
+		$f->description .= ' ' . sprintf($this->_('For more detailed instructions, please see [Configuring a CDN with ProCache](%s).'), 'https://processwire.com/api/modules/procache/cdn/#configuring-a-cdn-with-procache');
+		//$f->description .= ' ' . $this->_('In most ProCache scenarios, the starting path will literally be "/site/", but might also be "/" if your entire domain is the CDN pull origin.');
+		//$f->description .= ' ' . $this->_('This example would serve assets within "/site/" by a CloudFront CDN:') . "\n `/site/ = zzzzz.cloudfront.net`";
+		$f->notes = $this->_('**If your site uses SSL:** For http-only hostnames, prepend *http://* to the hostname, or if https only then prepend *https://*. Both http and https may also be specified separately for the same path on separate lines, but please specify the http host before the https host. If neither http or https is specified, then the same hostname will be assumed for both http and https requests.');
+		$tab->add($f);
+
+		/** @var InputfieldText $f */
+		$f = $modules->get('InputfieldText');
+		$f->attr('name', 'cdnExts');
+		$f->attr('value', $module->cdnExts);
+		$f->label = $this->_('CDN file extensions');
+		$f->description = $this->_('Enter the file extensions (separated by a space) that should be served by the CDN(s) listed above.');
+		$f->description = ' ' . $this->_('Leave blank to have the CDN handle all file extensions.');
+		$f->notes = $this->_('Example:') . ' `css js jpg jpeg gif png pdf`';
+		$f->icon = 'file';
+		$f->columnWidth = 50;
+		$tab->add($f);
+
+		/** @var InputfieldText $f */
+		$f = $modules->get('InputfieldText');
+		$f->attr('name', 'cdnAttrs');
+		$f->attr('value', $module->cdnAttrs);
+		$f->label = $this->_('CDN attributes');
+		$f->description = $this->_('Enter the HTML attributes (separated by a space) that should be matched for the file extensions.');
+		$f->description = ' ' . $this->_('Leave blank to match any HTML attribute that references an asset.');
+		$f->notes = $this->_('Recommended:') . ' `src srcset href`';
+		$f->columnWidth = 50;
+		$tab->add($f);
+
+		// cdnTemplates
+		/** @var InputfieldCheckboxes $f */
+		$f = $modules->get('InputfieldCheckboxes');
+		$f->attr('name', 'cdnTemplates');
+		$f->label = $this->_('CDN template files') . ' ' . $this->labels['optional'];
+		$f->description = $this->_('Pages using checked templates will be delivered with the CDN options specified above. **NOTE:** If no templates are selected, CDN options will be applied to all templates outputting HTML. Meaning, no selection is the same as all.');
+		foreach($this->wire('templates') as $t) {
+			if($t->contentType && $t->contentType != 'html') continue;
+			if($t->name == 'admin' || !$t->filenameExists()) continue;
+			$f->addOption($t->id, $t->name);
+		}
+		$f->attr('value', $module->cdnTemplates);
+		$f->collapsed = Inputfield::collapsedBlank;
+		$f->optionColumns = 3;
+		$tab->add($f);
+	}
+
+	/**
+	 * Build the "buster" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabBuster(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+		
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('File asset cache buster');
+		$fieldset->icon = 'fire-extinguisher';
+		$tab->add($fieldset);
+
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'busterUrlType');
+		$f->label = $this->_('Buster URL type');
+		$labelQueryString = $this->_('Versioned query string');
+		$labelFilesNaming = $this->_('Versioned files naming');
+		$f->addOption('qstr', 'A: ' . $labelQueryString . ' `/url/to/file.ext?version`');
+		$f->addOption('qvar', 'B: ' . $labelQueryString . ' `/url/to/file.ext?v=version`');
+		$f->addOption('name', 'C: ' . $labelFilesNaming . ' `/url/to/file.version.ext`');
+		$f->notes = $this->_('Note that option C requires an .htaccess update which ProCache outline for you after save.');
+		$f->attr('value', $module->busterUrlType);
+		$fieldset->add($f);
+
+		/** @var InputfieldMarkup $f */
+		$f = $modules->get('InputfieldMarkup');
+		$f->label = $this->_('How to cache bust assets with Buster');
+		$f->icon = 'info-circle';
+		$f->value = file_get_contents(dirname(__FILE__) . '/pwpc-buster.html');
+		$fieldset->add($f);
+	}
+
+	/**
+	 * Build the "tweaks" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabTweaks(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$module = $this->procache;
+		
+		// FIELDSET: output extras
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->label = $this->_('Output Tweaks');
+		$fieldset->icon = 'flask';
+		$tab->add($fieldset);
+
+		// body class attribute
+		/** @var InputfieldText $f */
+		$f = $modules->get('InputfieldText');
+		$f->attr('name', 'bodyClass');
+		$f->attr('value', $module->bodyClass);
+		$f->label = $this->_('<body> class attribute');
+		$f->description = $this->_('If you would like ProCache to automatically add a class attribute to the `<body>` tag of HTML pages that are cached, enter the class name you would like to use here. A good class name might be "ProCache". This is safe to do even if your `<body>` tag already uses a class attribute.');
+		$f->notes = $this->_('This gives you a way to distinguish between cached pages and non-cached pages by revealing something with CSS when your class name is present on the `<body>` tag. When enabled, ProCache will also add an HTML comment after the `<body>` tag indicating original render date and time.');
+		$f->notes .= ' ' . $this->_('If the `<body>` tag is not present (perhaps as a result of HTML minify) the `<html>` tag will be used instead.');
+		$fieldset->add($f);
+	
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'htVersion');
+		$f->addOption(2, 'v2');
+		$f->addOption(1, 'v1');
+		$f->attr('value', (int) $module->htVersion ? $module->htVersion : 2);
+		$f->label = $this->_('Version for ProCache .htaccess cache rules');
+		$f->optionColumns = 1;
+		$f->columnWidth = 50;
+		$f->notes = $this->labels['affectsHtaccess'];
+		$fieldset->add($f);
+
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'htNoEx');
+		$f->addOption(0, $this->labels['yes']);
+		$f->addOption(1, $this->labels['no']);
+		$f->attr('value', (int) $module->htNoEx);
+		$f->label = $this->_('Allow ProCache to create .htaccess example file?');
+		$f->notes = $this->_('Optionally stop creation of the .htaccess-procache file.'); 
+		$f->optionColumns = 1;
+		$f->columnWidth = 50;
+		$fieldset->add($f);
+
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'slashUrls');
+		$f->label = $this->_('How to handle trailing slashes in URLs');
+		$f->description = $this->_('URLs that do not match your selected trailing slash setting will fall-back to be delivered or redirected by ProcessWire.');
+		$f->addOption(0, $this->_('Allow cache to respond regardless of trailing slashes') . ' ' . $this->labels['default']);
+		$f->addOption(1, $this->_('Only respond to URLs with trailing slash, i.e. `/path/to/page/`'));
+		$f->addOption(-1, $this->_('Only respond to URLs with NO trailing slash, i.e. `/path/to/page`'));
+		$f->attr('value', (int) $module->slashUrls);
+		$f->showIf = 'htVersion>1';
+		$f->notes = $this->labels['affectsHtaccess'];
+		$fieldset->add($f);
+		
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'canonical');
+		$f->label = $this->_('Add canonical link tag to document head?');
+		$f->description = $this->_('This option will add a `<link rel="canonical" href="…">` to your cached document `<head>` when not already present.'); // canonical description 1
+		$f->description .= ' ' . $this->_('This is worthwhile because a cached document can be accessed with or without a trailing slash (depending on your setting above). The canonical tag specifies that the two possible versions (slash vs. no-slash) are the same URL, just in case there is any question (from a search engine perspective).'); // canonical description 2
+		$f->addOption('0', $this->_('No (Off)'));
+		$f->addOption('1', $this->_('Yes, with canonical URLs always using scheme they were accessed at (http vs. https)'));
+		$f->addOption('http', $this->_('Yes, with canonical URLs always using http as the scheme'));
+		$f->addOption('https', $this->_('Yes, with canonical URLs always using https (SSL) as the scheme'));
+		$f->notes = $this->_('When enabled, this option is only applied to output that will be cached. If you choose to add your own canonical tags to your output, they will override the setting here.'); // canonical notes
+		$f->notes .= "\n" . $this->_('**Important:** Always double check that the canonical link tag outputs what you expect it to by viewing the source of a page on your site. If using pagination and/or URL segments, be sure to test those scenarios too.'); // canonical disclaimer
+		$f->attr('value', $module->canonical);
+		$fieldset->add($f);
+		
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'lessType');
+		$f->label = $this->_('Type of LESS compiler/parser to use');
+		$f->description = 
+			$this->_('There are different options for the LESS compiler.') . ' ' . 
+			sprintf($this->_('The Wikimedia option(s) are preferable and require PHP version %s or newer.'), '7.2.9') . ' ' . 
+			sprintf($this->_('Your PHP version is %s.'), PHP_VERSION); 
+		if($modules->isInstalled('Less')) {
+			$f->addOption('module', 'Installed ProcessWire module for Wikimedia LESS ([' . $this->labels['details'] . '](https://processwire.com/modules/less/))');
+		}
+		$f->addOption('wikimedia', 'ProCache bundled Wikimedia LESS ([' . $this->labels['details'] . '](https://github.com/wikimedia/less.php))');
+		$f->addOption('leafo', 'ProCache bundled Leafo LESS ([' . $this->labels['details'] . '](https://github.com/leafo/lessphp))');
+		$f->attr('value', $module->lessType);
+		$fieldset->add($f);
+		
+		/** @var InputfieldRadios $f */
+		$f = $modules->get('InputfieldRadios');
+		$f->attr('name', 'debug');
+		$f->addOption(1, $this->labels['yes']);
+		$f->addOption(0, $this->labels['no']);
+		$f->attr('value', (int) $module->debug);
+		$f->label = $this->_('Enable cache debug mode?');
+		$f->description = $this->_('When in cache debug mode, ProCache will include a line at the bottom of your cached page with information about the page that was cached. When removing debug mode, remember to clear your cache.');
+		$f->notes = $this->_('If you want to position or style the debug line with CSS, the container element is: `<p id="ProCacheDebug">`');
+		$f->optionColumns = 1;
+		$fieldset->add($f);
+	}
+	
+	/**
+	 * Build the "gzip+more" tab
+	 * 
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabMore(InputfieldWrapper $tab) {
+		
+		$modules = $this->wire()->modules;
+		$config = $this->wire()->config;
+		
+		/** @var InputfieldMarkup $f */
+		$f = $modules->get('InputfieldMarkup');
+		$f->label = $this->_('Recommended optimizations to your .htaccess file for GZIP and Expires headers');
+		$f->icon = 'code';
+		
+		$htaccessFile = $config->paths->root . '.htaccess';
+		$htaccessGood = false;
+		
+		if(is_file($htaccessFile)) {
+			$htaccessData = file_get_contents($htaccessFile);
+			if($htaccessData) {
+				if(strpos($htaccessData, "PWPC-" . ProCache::HTACCESS_TWEAKS_VERSION)) {
+					$htaccessGood = true;
+				} else if(strpos($htaccessData, 'PWPC-')) {
+					$htaccessGood = 0;
+				}
+			}
+		}
+		
+		if($htaccessGood) {
+			$notes = $this->_('Success! We have detected that these tweaks are currently present in your .htaccess file.');
+		} else if($htaccessGood === 0) {
+			$notes = $this->_('We detected that you are using an older version of the .htaccess tweaks. Please compare your .htaccess file with the recommended version to see if any adjustments are worthwhile.');
+		} else {
+			$notes = $this->_('We did not detect these tweaks in your .htaccess file. If you have placed them in an httpd.conf file or do not wish to apply them, you can ignore this message.');
+		}
+		
+		$f->value .= 
+			"<p style='margin-top: 0.75em;' class='notes'>$notes</p>" . 
+			file_get_contents(dirname(__FILE__) . '/htaccess-instructions.php');
+		
+		$f->value = str_replace('{url}', $config->urls('ProCache') . 'htaccess-tweaks.txt', $f->value);
+		$tab->add($f);
+	}
+	
+	/**
+	 * Build the "tweaks" tab
+	 *
+	 * @param InputfieldWrapper $tab
+	 *
+	 */
+	protected function buildFormTabTests(InputfieldWrapper $tab) {
+
+		$modules = $this->wire()->modules;
+		$sanitizer = $this->wire()->sanitizer;
+		$session = $this->wire()->session;
+
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $modules->get('InputfieldFieldset');
+		$fieldset->attr('id', 'ProCacheTests'); 
+		$fieldset->label = $tab->attr('title'); // Tests
+		$fieldset->icon = 'flask';
+		$tab->add($fieldset);
+		
+		$tests = array(
+			'Cache', 
+			'Behaviors', 
+			'Headers', 
+			'Compression',
+			'Keepalive',
+		); 
+		$results = '';
+		$refreshUrl = '';
+		
+		foreach($tests as $test) {
+			$method = "buildFormTabTests$test";
+			$refresh = '';
+			$result = $this->$method($fieldset, $refresh);
+			if(empty($result)) continue;
+			if(strlen($refresh)) $refreshUrl .= ($refreshUrl ? "&$refresh" : "?$refresh");
+			$inputfield = $fieldset->getChildByName("_test$test");
+			$label = $inputfield ? $sanitizer->entities($inputfield->label) : 'Result';
+			$icon = $inputfield->icon;
+			$icon = $icon ? wireIconMarkup($icon) . ' ' : '';
+			// if($results) $results .= "<hr />";
+			$results .= "<h3>$icon$label</h3>" . $result;
+		}
+		
+		if($results) {
+			$results .= "<p><span class='detail'>" . sprintf($this->_('Test results from %s'), date('Y-m-d H:i:s')) . "</span></p>";
+			if($refreshUrl) {
+				/** @var InputfieldButton $f */
+				$f = $modules->get('InputfieldButton');
+				$f->attr('id+name', '_testsRefresh');
+				$f->attr('value', $this->_('Refresh test results'));
+				$f->href = $refreshUrl . '&highlight=1';
+				$f->icon = 'refresh';
+				$results .= $f->render();
+			}
+			$session->setFor($this, 'testResults', $results);
+		} else {
+			$results = $session->getFor($this, 'testResults');
+		}
+
+		if($results) {
+			/** @var InputfieldMarkup $f */
+			$f = $modules->get('InputfieldMarkup');
+			$f->attr('id+name', '_testResults');
+			$f->value = $results;
+			$f->themeOffset = 1;
+			if(!$this->wire()->notices->hasErrors() && $this->wire('input')->get('highlight')) {
+				if(version_compare($this->wire()->config->version, '3.0.144', '>=')) {
+					// find and highlight test results
+					$f->appendMarkup .= "<script>$(document).ready(function(){Inputfields.find('#ProCacheTests')});</script>";
+				}
+			}
+			$fieldset->prepend($f);
+		}
+
+	}
+	
+	/**
+	 * Build and/or execute the compression test
+	 *
+	 * @param InputfieldWrapper $tab
+	 * @param string $refreshUrl
+	 * @return string Test results markup, when applicable
+	 *
+	 */
+	protected function buildFormTabTestsCompression($tab, &$refreshUrl) {
+
+		/** @var InputfieldURL $f */
+		$f = $this->wire()->modules->get('InputfieldURL');
+		$f->attr('name', '_testCompression');
+		$f->label = $this->_('Test for GZIP, LZW, zlib/deflate or Brotli compression');
+		$f->icon = 'compress';
+		$f->themeOffset = 1;
+		$f->description = $this->_('Enter a full http/https URL on your website to get type of compression in use.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$tab->add($f);
+
+		$input = $this->wire()->input;
+		$url = trim($input->post('_testCompression'));
+		if(empty($url)) $url = $input->get('_testCompression');
+		$url = $this->procache->getTests()->validateUrl($url);
+		if(empty($url)) return '';
+
+		$refreshUrl = "$f->name=" . urlencode($url);
+		$value = $this->procache->getTests()->urlHeader($url, 'content-encoding', true);
+
+		$noneLabel = $this->_('No compression detected');
+		if(empty($value)) return '<p>' . $noneLabel . '</p>';
+
+		$valids = array();
+		$values = strpos($value, ',') ? explode(',', $value) : array($value);
+		$types = array(
+			'gzip' => 'GZIP (LZ77)', 
+			'compress' => 'Compress (LZW)', 
+			'deflate' => 'Deflate (zlib)', 
+			'br' => 'Brotli (LZ77/Huffman/2OCM)', 
+		);
+		
+		foreach($values as $value) {
+			$value = strtolower(trim($value));
+			if(strpos($value, 'x-') === 0) list(,$value) = explode('-', $value, 2);
+			if(isset($types[$value])) $valids[$value] = $types[$value];
+		}
+		
+		if(count($valids)) {
+			$result = sprintf($this->_('Success - detected compression: %s'), implode(', ', $valids));
+		} else {
+			$result = $this->_('No compression detected'); 
+			if(count($values)) $result .= ' (' . implode(', ', $values) . ')';
+		}
+		
+		$result = $this->wire()->sanitizer->entities1($result);
+		
+		return "<p>$result</p>";
+	}
+
+	/**
+	 * Build and/or execute the keep-alive test
+	 *
+	 * @param InputfieldWrapper $tab
+	 * @param string $refreshUrl
+	 * @return string Test results markup, when applicable
+	 *
+	 */
+	protected function buildFormTabTestsKeepalive($tab, &$refreshUrl) {
+
+		/** @var InputfieldURL $f */
+		$f = $this->wire()->modules->get('InputfieldURL');
+		$f->attr('name', '_testKeepalive');
+		$f->label = $this->_('Test for keep-alive connection');
+		$f->icon = 'eye-slash';
+		$f->themeOffset = 1;
+		$f->description = $this->_('Enter a full http/https URL on your website to test that a keep-alive connection is active.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$tab->add($f);
+
+		$input = $this->wire()->input;
+		$url = trim($input->post('_testKeepalive'));
+		if(empty($url)) $url = $input->get('_testKeepalive');
+		$url = $this->procache->getTests()->validateUrl($url);
+		if(empty($url)) return '';
+
+		$refreshUrl = "$f->name=" . urlencode($url);
+		$value = $this->procache->getTests()->urlHeader($url, 'connection', true);
+		$value = strtolower(trim($value));
+		$url = $this->wire()->sanitizer->entities($url);
+
+		$noneLabel = sprintf($this->_('Keep-alive is not detected for %s'), $url);
+		
+		if(empty($value)) {
+			$result = $noneLabel;
+		} else if($value !== 'keep-alive') {
+			$result = "$noneLabel (connection: " . $this->wire()->sanitizer->entities($value) . ")";
+		} else {
+			$result = sprintf($this->_('Success: keep-alive connection is detected for %s'), $url);
+		}
+		
+		return "<p>$result</p>";
+	}
+	
+	/**
+	 * Build and/or execute the behaviors test field
+	 *
+	 * @param InputfieldWrapper $tab
+	 * @param string $refreshUrl
+	 * @return string Test results markup, when applicable
+	 *
+	 */
+	protected function buildFormTabTestsHeaders($tab, &$refreshUrl) {
+		
+		/** @var InputfieldURL $f */
+		$f = $this->wire()->modules->get('InputfieldText');
+		$f->attr('name', '_testHeaders');
+		$f->label = $this->_('Test http response headers returned by URL');
+		$f->icon = 'handshake-o';
+		$f->themeOffset = 1;
+		$f->description = $this->_('Enter a full http/https URL on your website to get the headers it returns before your page content.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$tab->add($f);
+
+		$input = $this->wire()->input;
+		$url = trim($input->post('_testHeaders'));
+		if(empty($url)) $url = $input->get('_testHeaders');
+		$url = $this->procache->getTests()->validateUrl($url);
+		if(empty($url)) return '';
+		
+		$refreshUrl = "$f->name=" . urlencode($url);
+		$headers = $this->procache->getTests()->urlHeaders($url, true);
+		
+		if(empty($headers)) return '<p>' . $this->_('No headers returned.') . '</p>';
+		
+		/** @var MarkupAdminDataTable $table */
+		$table = $this->wire()->modules->get('MarkupAdminDataTable');
+		foreach($headers as $name => $value) {
+			if(strtolower($name) === 'set-cookie') $name .= ' ' . $this->_('(names)');
+			$table->row(array($name, $value)); 
+		}
+
+		return $table->render();
+	}
+
+
+	/**
+	 * Build and/or execute the behaviors test field
+	 *
+	 * @param InputfieldWrapper $tab
+	 * @param string $refreshUrl
+	 * @return string Test results markup, when applicable
+	 *
+	 */
+	protected function buildFormTabTestsBehaviors($tab, &$refreshUrl) {
+		
+		$module = $this->procache;
+		
+		/** @var InputfieldPageListSelectMultiple $f */
+		$f = $this->wire()->modules->get('InputfieldPageListSelectMultiple');
+		$f->attr('name', '_testBehaviors');
+		$f->label = $this->_('Test how cache is cleared (behaviors)');
+		$f->icon = 'fire-extinguisher';
+		$f->themeOffset = 1;
+		$f->description =
+			$this->_('Select one or more pages to test what cache clearing behaviors would execute when the page(s) are saved.') . ' ' .
+			$this->_('Upon submit, we will do a dry-run of the behaviors for selected page(s) and show you the results. No changes will actually be made.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$tab->add($f);
+
+		// determine if we should run behavior tests
+		$input = $this->wire()->input;
+		$testPageIDs = $input->post('_testBehaviors');
+		if(empty($testPageIDs)) $testPageIDs = $input->get('_testBehaviors');
+		if(is_array($testPageIDs)) $testPageIDs = implode(',', $testPageIDs);
+		if(empty($testPageIDs)) return '';
+		
+		$testPageIDs = explode(',', $testPageIDs);
+		$completedPageIDs = array();
+		$module->getStatic()->setTestMode(true);
+		
+		$out = '';
+		
+		$thead = array(
+			$this->_('Cached page'),
+			$this->_('Action'),
+			$this->_('Cache file')
+		);
+
+		foreach($testPageIDs as $id) {
+			$id = (int) $id;
+			if($id < 1) continue;
+			$item = $this->wire()->pages->get($id);
+			if(!$item->viewable()) continue;
+			$module->getHooker()->pageSaved($item);
+			$data = $module->getStatic()->getTestData(true);
+			$out .= 
+				"<p><strong>" . 
+				sprintf($this->_('When page “%s” is saved, the following cache-clear behaviors occur:'), $item->path) . 
+				"</strong></p>";
+			if(count($data)) {
+				/** @var MarkupAdminDataTable $table */
+				$table = $this->wire()->modules->get('MarkupAdminDataTable');
+				$table->headerRow($thead);
+				foreach($data as $info) {
+					$table->row(array($info['page']->path, $info['action'], $info['file'])); 
+				}
+				$out .= $table->render();
+			} else {
+				$out .= '<p>' . $this->_('No changes to cache files') . '</p>';
+			}
+			$completedPageIDs[] = $item->id;
+		}
+		
+		$module->getStatic()->setTestMode(false);
+		$refreshUrl = "$f->name=" . implode(',', $completedPageIDs);
+		
+		return $out;
+	}
+
+	/**
+	 * Build and/or execute the cache tests field
+	 *
+	 * @param InputfieldWrapper $tab
+	 * @param string $refreshUrl
+	 * @return string Test results markup, when applicable
+	 *
+	 */
+	protected function buildFormTabTestsCache($tab, &$refreshUrl) {
+
+		/** @var InputfieldURL $f */
+		$f = $this->wire()->modules->get('InputfieldText');
+		$f->attr('name', '_testCache');
+		$f->label = $this->_('Test if cache is working and how it performs');
+		$f->icon = 'dashboard';
+		$f->themeOffset = 1;
+		$f->description =
+			$this->_('Enter a full http/https URL on your website to test. We will time the result and compare to non-cached render time.') . ' ' .
+			$this->_('To run multiple times and compile the average, enter the quantity of times you want to run the test followed by a space and then the URL.') . ' ' .
+			$this->_('For example, entering “3 https://domain.com” would run three times.');
+		$f->notes = $this->_('After submitting a URL please note that this test may take several seconds to complete.');
+		$f->collapsed = Inputfield::collapsedYes;
+		$tab->add($f);
+
+		$input = $this->wire()->input; 
+		$url = trim($input->post('_testCache'));
+		if(empty($url)) $url = $input->get('_testCache');
+		if(empty($url)) return '';
+		
+		$testResultsLabel = $this->_('Status');
+		$secondsLabel = $this->_('seconds');
+		$resultNow = false;
+		$refreshUrl = "$f->name=" . urlencode($url);
+
+		if(strpos($url, ' ')) {
+			list($qty, $url) = explode(' ', $url, 2);
+			$url = trim($url);
+			$qty = ctype_digit($qty) ? (int) $qty : 1;
+			if($qty > 9) {
+				$qty = 9;
+				$this->warning(sprintf($this->_('Max allowed quantity for cache tests is %d'), $qty));
+			}
+		} else {
+			$qty = 1;
+		}
+		
+		$url = $this->procache->getTests()->validateUrl($url);
+		if(empty($url)) return '';
+
+		if(!empty($url)) {
+			$result = $this->procache->getTests()->urlCacheTestQty($url, $qty);
+			if($result['success']) {
+				$resultNow = true;
+			} else {
+				$this->error("$testResultsLabel - $result[message]");
+			}
+		}
+
+		if(!$resultNow) return '';
+
+		if(empty($result['success'])) return '';
+
+		foreach(array('normal', 'cached') as $type) {
+			foreach($result[$type] as $k => $v) {
+				if(is_float($v)) $v = round($v, 5);
+				if(is_array($v)) continue;
+				$result[$type][$k] = $this->wire()->sanitizer->entities($v);
+			}
+		}
+		foreach($result as $k => $v) {
+			if(is_float($v)) $v = round($v, 5);
+			if(!is_string($v)) continue;
+			$result[$k] = $this->wire()->sanitizer->entities($v);
+		}
+
+		$normal = $result['normal'];
+		$cached = $result['cached'];
+		
+		/** @var MarkupAdminDataTable $table */
+		$table = $this->wire()->modules->get('MarkupAdminDataTable');
+		$table->row(array($testResultsLabel, $result['message']));
+		$table->row(array('URL', $cached['url'])); 
+		$table->row(array($this->_('Cache OFF'), "$normal[timer] $secondsLabel"));
+		$table->row(array($this->_('Cache ON'), "$cached[timer] $secondsLabel"));
+		$table->row(array($this->_('Time saved'), "$result[timeSaved] $secondsLabel (" . round($result['timeSavedPct'], 2) . "%)"));
+	
+		return $table->render();
+	}
+
+	/**
+	 * Populate license configuration
+	 * 
+	 * @param InputfieldWrapper $form 
+	 * @return InputfieldWrapper
+	 *
+	 */
+	public function getLicenseConfig(InputfieldWrapper $form) {
+
+		$input = $this->wire('input'); /** @var WireInput $input */
+		$config = $this->wire('config'); /** @var Config $config */
+		$session = $this->wire('session'); /** @var Session $session */
+		$sanitizer = $this->wire('sanitizer'); /** @var Sanitizer $sanitizer */
+		
+		/** @var InputfieldText $f */
+		$f = $this->wire('modules')->get('InputfieldText');
+		$f->attr('id+name', 'licenseKey');
+		$licenseKey = $this->procache->licenseKey;
+
+		if($input->post('licenseKey') && $input->post('licenseKey') != $session->get('ProCacheLicenseKey')) {
+			// validate 
+			$http = new WireHttp();
+			$license = $sanitizer->text($input->post('licenseKey'));
+			$result = $http->post('https://processwire.com/ProCache/license.php', 
+				array(
+					'action' => 'validate', 
+					'license' => $license,
+					'host' => $config->httpHost
+				));
+
+			if($result === 'valid') {
+				$licenseKey = $license; 
+				$f->notes = "Validated!";
+				$this->message("License key has been validated!");
+
+			} else if($result === 'invalid') {
+				$licenseKey = '';
+				$f->error("Invalid license key");
+
+			} else {
+				$licenseKey = '';
+				$f->error("Unable to validate license key"); 
+			}
+		}
+
+		if(empty($licenseKey)) $input->post->__unset('licenseKey'); 
+
+		$f->attr('value', $licenseKey);
+		$f->required = true; 
+		$f->label = "License Key";
+		$f->attr('value', $licenseKey);
+		$f->description = "Paste in your ProCache license key.";
+		$f->notes = "If you did not purchase ProCache for this site, please [purchase a license here](https://processwire.com/ProCache/).";
+		if($this->procache->data('cachePrimed')) $f->collapsed = Inputfield::collapsedYes; 
+		$form->add($f);
+
+		$session->set('ProCacheLicenseKey', $licenseKey);
+
+		return $form;
+	}
+
+	/**
+	 * Get ProCache version string
+	 * 
+	 * @param bool $getHtml Get in HTML paragraph?
+	 * @return string
+	 * 
+	 */
+	protected function getVersionString($getHtml = false) {
+		$moduleInfo = $this->wire()->modules->getModuleInfoVerbose($this->procache);
+		$version = "ProCache v$moduleInfo[versionStr]";
+		return $getHtml ? "<p class='version detail'>$version</p>" : $version;
+	}
+
+	/**
+	 * Return the page that this Process is installed on 
+	 *
+	 */
+	protected function getInstalledPage() {
+
+		$admin = $this->pages->get($this->config->adminRootPageID);
+		$parent = $admin->child("name=setup");
+		if(!$parent->id) $parent = $admin;
+		$name = 'procache';
+		$page = $parent->child("name=$name");
+
+		if(!$page->id) {
+			$info = ProCache::getModuleInfo();
+			$page = new Page();
+			$page->parent = $parent;
+			$page->template = 'admin';
+			$page->name = $name;
+			$page->title = $info['title'];
+			$page->process = $this;
+			$page->sort = $parent->numChildren;
+			$page->save();
+		}
+
+		return $page;
+	}
+
+
+	/**
+	 * Uninstall ProCache Process 
+	 *
+	 */
+	public function ___install() {
+		$page = $this->getInstalledPage();
+		$this->message(sprintf($this->_('Installed to %s'), $page->path));
+		if($page->parent->name == 'setup') $this->message($this->_('Click to your "Setup" page to start using ProCache.'));
+	}
+
+	/**
+	 * Uninstall ProCache Process and htaccess changes
+	 *
+	 */
+	public function ___uninstall() {
+
+		$page = $this->getInstalledPage();
+		if(!$page->id) return;
+		$this->message(sprintf($this->_('Removed %s'), $page->path));
+		$this->pages->delete($page);
+
+		// uninstall htaccess file changes
+		$instructions = $this->_("To finish uninstall, please edit your /.htaccess file and remove all lines between: '# PROCACHE' and '# /PROCACHE', which identify the beginning and ending of the ProCache htaccess rules."); 
+		// $data = file_get_contents($file);
+		
+		$this->warning($instructions);
+
+		/*
+		// if no ProCache rules in htaccess, then exit early
+		if(strpos($data, '# PROCACHE') === false || strpos($data, '# /PROCACHE') === false) return;
+
+		// replace procache region with blank
+		$data = preg_replace('/# PROCACHE.*?# \/PROCACHE/s', '', $data); 
+
+		if(file_put_contents($file, $data)) {
+			$this->message('Removed ProCache rules from htaccess'); 
+		} else {
+			$this->error($instructions);
+		}
+		*/
+	}
+
+}
