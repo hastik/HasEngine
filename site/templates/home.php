@@ -9,9 +9,7 @@ function printTime($time){
 }
 
 
-$hypermedia = new Hypermedia; 
-
-$hypermedias = new Hypermedias; 
+$hmx = wire("hmx"); 
 
 ?>
 <script src="https://unpkg.com/htmx.org@1.8.5"></script>
@@ -55,8 +53,8 @@ $hypermedias = new Hypermedias;
 
 
 <?php 
-	
-	//$pg = wire()->pages->get("/o-nas");
+	$limit = 1;
+	$pg = wire()->pages->get("/o-nas");
 	//$fragment = $hypermedia->setFragment("/o-nas/table/item",
 	//["selector" => "published=0,children.count>0"],["cache"=>20])->includeFragment($pg);
 	//$cache->save("x",$fragment,5);
@@ -71,34 +69,8 @@ $hypermedias = new Hypermedias;
 
 
 <div class="grid">
-  <div>
-	<h2>Foreach One file</h2>
 
-
-	<?php 
-
-	wire("cache")->deleteAll();
-	
-/*	$time_start = microtime(true);
-	$fragment = $hypermedia->get("/test/test/table-foreach",
-	["selector" => "published=0,children.count>0",
-		"onpage" => "50",
-		"page"=>"1"],"wire")->fetch();
-	
-		echo $hypermedia->printTime();
-		echo $hypermedia->printUrl();
-	
-	echo $fragment;		
-*/
-
-?>
-
-
-
-
-
-  </div>
-  <div>
+<div>
 
 
   <h2>Foreach Include</h2>
@@ -117,6 +89,13 @@ $hypermedias = new Hypermedias;
 	echo $fragment;		
 */
 
+	$pagex = wire("pages")->getByPath("/test",['allowUrlSegments' => true, 'allowGet' => true]);
+
+	$fragment = $hmx->get("/test/r-test_table-includes/q-selector=template=basic-page&limit=$limit?cache=50",$pagex,"include");
+	echo $fragment->printTime();
+	echo $fragment->render();
+
+
 ?>
 
 
@@ -126,21 +105,44 @@ $hypermedias = new Hypermedias;
 
 
   </div>
+
+  <div>
+	<h2>Foreach One file</h2>
+
+
+	<?php 
+
+$fragment = $hmx->get("/test/r-test_table-foreach/q-selector=template=basic-page&limit=$limit?cache=50","wire");
+bd($hmx);
+echo $fragment->printTime();
+echo $fragment->render();
+
+
+?>
+
+
+
+
+
+  </div>
+  
   <div>
   <h2>Foreach Wire</h2>
 
 
   <?php  
   
-	$fragment = $hypermedias->get("/test/test/table-wire/selector=count>4,published=1,limit=20&cache=20&onpage=4?selector=count>4,published=1,limit=20&cache=20&onpage=4","wire");
+	$fragment = $hmx->get("/test/r-test_table-wire/q-selector=template=basic-page&limit=$limit?cache=50","wire");
+	bd($hmx);
+	echo $fragment->printTime();
+	echo $fragment->render();
 	
-	
-	//bd($hypermedia);
 	
 	/*echo $hypermedia->printTime();
 	echo $hypermedia->printUrl();
 	echo $fragment;		
-*/
+	*/
+
 
 ?>
 
@@ -149,10 +151,27 @@ $hypermedias = new Hypermedias;
 
 
   <div>
-  <h2>Foreach WireOnload</h2>
+  <h2>Foreach Onload->Foreach</h2>
 
 
   <?php 
+
+	$fragment = $hmx->get("/test/r-test_table-onload/q-selector=template=basic-page&limit=$limit?cache=50","wire");
+	bd($hmx);
+	echo $fragment->printTime();
+	echo $fragment->render();
+
+
+	?>
+
+ 
+
+
+
+  <?php 
+
+
+
 	/*$time_start = microtime(true);
 	$fragment = $hypermedia->get("/test/test/table-onload",
 	["selector" => "published=0,children.count>0",

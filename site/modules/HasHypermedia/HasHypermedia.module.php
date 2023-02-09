@@ -57,9 +57,9 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 */
 	public function init() {
 
-		$this->hypermedia = "tady je objekt hypermédií";
+		$this->hypermedia = new Hypermedias;
 
-		//$this->wire()->set("hypermedia", $this->hypermedia);	
+		$this->wire()->set("hmx", $this->hypermedia);	
 
 		// Add a hook after the $pages->save, to issue a notice every time a page is saved
 		$this->pages->addHookAfter('saved', $this, 'pageSaveHookExample'); 
@@ -181,11 +181,20 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 			return;
 		}
 
-		$hypermedias= new Hypermedias;
-		$hypermedias->get($page,"live");
 
-		dumpBig($hypermedias);
-
+		if(is_array($page->get("_urlSegments"))){			
+			$this->hypermedia->get($page,"wirelive");
+			
+		}
+		elseif(isset(wire()->input->urlSegments()[1])){
+			//dump(wire()->input->urlSegments());
+			
+			$this->hypermedia->get($page,"live");
+		}
+		else{
+			return;
+		}
+		
 				
 
 		$activeSegments = $page->get("_urlSegments") ? $page->get("_urlSegments") : wire()->input->urlSegments();
@@ -207,10 +216,10 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		//$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
 
 		
-		$page->setQuietly("_hm",$hypermedias);
-		$page->template->setFilename($hypermedias->template_path);
+		$page->setQuietly("_hm",clone $this->hypermedia);
+		$page->template->setFilename($this->hypermedia->template_path);
 
-		dumpBig($page);
+		//dumpBig($page);
 		
 		/*
 

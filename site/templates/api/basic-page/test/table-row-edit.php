@@ -10,7 +10,7 @@
             'pocet' => wire("input")->post("pocet")
         ]);
 
-        wire("session")->redirect($page->url."/test/table-row");
+        wire("session")->redirect($page->url."/r-test_table-row");
 
     }
 

@@ -438,6 +438,33 @@ DirectoryIndex index.php index.html index.htm
   # RewriteCond %{REQUEST_URI} "^/~?[-_./a-zA-Z0-9æåäßöüđжхцчшщюяàáâèéëêěìíïîõòóôøùúûůñçčćďĺľńňŕřšťýžабвгдеёзийклмнопрстуфыэęąśłżź]*$"
   
   # END-PW-PAGENAME
+
+
+
+  # PROCACHE v2/dd2abbafc13075a1f44cf332348c3902 --------------------------------------------------
+  RewriteCond %{REQUEST_METHOD} !=POST
+  RewriteRule ^.*$ - [E=pwpcstep:pour,E=pwpcname:index,E=pwpchost:X]
+  RewriteCond %{ENV:pwpcstep} "=pour"
+  RewriteCond %{HTTP_COOKIE} !^.*(wire_challenge|wires_challenge).*$
+  RewriteRule ^.*$ - [E=pwpcstep:stir,E=pwpcpath:/site/assets/ProCache-fc39460498e20e0f9e9772bf3d9231]
+  RewriteCond %{ENV:pwpcstep} "=stir"
+  RewriteCond %{HTTP_HOST} ^pwx.local$ [NC]
+  RewriteRule ^.*$ - [E=pwpchost:pwx_local,E=pwpcstep:shake]
+  RewriteCond %{ENV:pwpcstep} "=stir"
+  RewriteCond %{HTTP_HOST} ^hm.ndrw.cz$ [NC]
+  RewriteRule ^.*$ - [E=pwpchost:hm_ndrw_cz,E=pwpcstep:shake]
+  RewriteCond %{ENV:pwpcstep} "=shake"
+  RewriteCond %{DOCUMENT_ROOT}%{ENV:pwpcpath}/$0/%{ENV:pwpcname}-%{ENV:pwpchost}.html -f
+  RewriteRule ^.*$ - [E=pwpcstep:drink,E=pwpcfile:$0/%{ENV:pwpcname}-%{ENV:pwpchost}.html]
+  RewriteCond %{ENV:pwpcstep} "=drink"
+  RewriteRule ^(.*) %{ENV:pwpcpath}/%{ENV:pwpcfile} [L]
+  <ifModule mod_headers.c>
+  Header set X-PWPC "ProCache" env=pwpcstep
+  Header set X-Powered-By "ProcessWire CMS, ProCache" env=pwpcstep
+  </ifModule>
+  RewriteCond %{REQUEST_URI} "^/~?[-_.a-zA-Z0-9/]*$"
+  # /PROCACHE -------------------------------------------------------------------------------------
+
   # -----------------------------------------------------------------------------------------------
   # 17. If the request is for a file or directory that physically exists on the server,
   # then don't give control to ProcessWire, and instead load the file

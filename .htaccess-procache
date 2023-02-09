@@ -440,9 +440,9 @@ DirectoryIndex index.php index.html index.htm
   # END-PW-PAGENAME
 
 
-  # PROCACHE v2/fa0c63bfffc529afe430e646f4f9a4d0 --------------------------------------------------
+
+  # PROCACHE v2/dd2abbafc13075a1f44cf332348c3902 --------------------------------------------------
   RewriteCond %{REQUEST_METHOD} !=POST
-  RewriteCond %{QUERY_STRING} !.*=.*
   RewriteRule ^.*$ - [E=pwpcstep:pour,E=pwpcname:index,E=pwpchost:X]
   RewriteCond %{ENV:pwpcstep} "=pour"
   RewriteCond %{HTTP_COOKIE} !^.*(wire_challenge|wires_challenge).*$

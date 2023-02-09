@@ -8,6 +8,7 @@ class Hypermedias{
 
     public $url;
     public $url_decoded;
+    public $url_temp;
 
     public $path;
     public $path_decoded;
@@ -34,10 +35,12 @@ class Hypermedias{
     public $template_paths;
     public $template_path;
 
+    public $render_data;
+
     private $char_table; 
     private $time_start;
     private $time_end;
-    private $time;
+    public $time;
 
 
 
@@ -121,7 +124,6 @@ class Hypermedias{
     
     function get($arg1, $arg2 = null, $arg3 = null){
 
-
         $this->time_start = microtime(true);
 
         if(is_array($arg2)){            
@@ -136,65 +138,117 @@ class Hypermedias{
             $this->setInsertMethod($arg2);
             $this->setResourceFromLive($arg1);
         }
-        else{
+        else{            
             $this->setInsertMethod($arg2);
-            $this->setResourceFrom1($arg1);
+            $this->setResourceFrom1($arg1);            
         }
 
         return $this;
 
     }
 
+    function initFromUrlDecoded($url){
+
+    }
+
+    function printTime(){
+        $time = round($this->time,4);
+        return "<div class='time'>$time</div>";
+    }
+
+    function setResourceFromPage($url,$page){
+        
+        //dump($page);
+
+        $page->setQuietly("_hm",$this);
+        $segments = $this->segmentsFromUrl(str_replace($page->url,"",$url));
+        
+        foreach($segments as &$segment){
+            $segment = $this->translateToUrl($segment);
+        }
+        $this->segments = $segments;
+        
+        //$this->get_decoded = 
+        
+
+        $this->setResourceFromLive($page);
+        
+        $page->setQuietly("_urlSegments",$segments);
+
+        
+
+        ob_start();
+            
+            include($this->template_path);
+           
+        $buffer = ob_get_contents();
+        @ob_end_clean();
+
+        $this->render_data = $buffer;
+
+        $this->time_end = microtime(true);
+        $this->time = $this->time_end-$this->time_start;
+        
+        return $this;
+
+    }
+
     function setResourceFrom1($url){
-
-        $this->url = $url;        
-
-        $urlParts = explode("?",$this->url);
-
-        $this->path = $urlParts[0];
-        $this->get = $urlParts[1];
-
         
+        $page = wire("pages")->getByPath($url,['allowUrlSegments' => true, 'allowGet' => true]);
+        $this->url_temp = $url;
+        $this->render_data = $page->render();
 
-        // ! Get Query 
-
-        $this->get_data = $this->queryToGet($this->get);
-        $this->get_sanitized = http_build_query($this->get_data);
-
-        $this->sanitized_url = wire("sanitizer")->url($this->path."?".$this->get_sanitized);
-        
-        // ! Segmenty
-        
-        $this->segments = $this->segmentsFromUrl($this->url);
-
-        
-        //dump($this);
+        $this->time_end = microtime(true);
+        $this->time = $this->time_end - $this->time_start;
         
         return $this;
     }
 
+
+    function render(){
+        return $this->render_data;
+    }
+
+
+    function initFromUrl($url){
+
+    }
 
     function setResourceFromLive($page){
         
         $this->page = $page;
         $this->page_url = $page->url;
        // dump(wire()->input->urlSegments());
-        $this->segments = isset(wire()->input->urlSegments()[1]) ? wire()->input->urlSegments() : null;
-        $this->get_data = wire()->input->get()->getArray();
-       
-        $this->get = http_build_query($_GET);
 
-        /*$get = "";
-        $i=0;
-        foreach($_GET as $name => $value){
-            $i++;
-            $get.= $name."=".$value;
-            if($i<count($_GET)){
-                $get.="&";
+       
+
+       if(is_array($page->get("_urlSegments"))){ // jedeme z wiru // TODO **********************
+            $actual_segment_url = str_replace($page->url,"",$this->url_temp);
+            $segments = $this->segmentsFromUrl($actual_segment_url);            
+            foreach($segments as &$segment){
+                $segment = $this->translateToUrl($segment);
             }
-        }
-        $this->get = $get;
-        */
+            $this->segments = $segments;
+            
+       }
+       elseif(isset(wire()->input->urlSegments()[1])){
+            $this->segments = wire()->input->urlSegments();
+       }
+
+       
+       if($page->get("_get")){
+            $this->get_data = $page->get("_get");
+            $this->get = http_build_query($this->get_data);
+       }
+       elseif(wire()->input->get()->getArray()){
+            $this->get_data = wire()->input->get()->getArray();
+            $this->get = http_build_query($this->get_data);
+       }
+
+       
+       
+        
 
         $this->completeData();
         
@@ -290,6 +344,8 @@ class Hypermedias{
         $this->path = $this->page_url;
         $this->path .= $this->segments ? "/".implode("/",$this->segments) : "";
 
+        dump($this);
+
         $this->path_decoded = $this->page_url;
         $this->path_decoded .= $this->segments ? "/".implode("/",$this->segments_parts_decoded) : "";;
         
@@ -301,8 +357,8 @@ class Hypermedias{
 
         //$this->setQueryData("limit",40);
         //$this->unsetQueryData("selector");
-        dump($this->getUrl());
-        dump($this->getUrlDecoded());
+        //dump($this->getUrl());
+        //dump($this->getUrlDecoded());
         
     }
 
@@ -415,10 +471,10 @@ class Hypermedias{
         
         $path_in_api = $template."/".$this->template_uri;
 
-        if(isset($this->templates_resolved_paths[$path_in_api])){
+        /*if(isset($this->templates_resolved_paths[$path_in_api])){
             $this->template_path = $this->templates_resolved_paths[$path_in_api];
             return $this;
-        }
+        }*/
 
         
         
