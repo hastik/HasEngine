@@ -6,7 +6,7 @@
 
     //$pages = wire($pages)->findMany("template=basic-page");
     //$pages = $page->children("field=title|pocet");
-    $pages = $page->children("limit=10");
+    $pages = $page->children("limit=2");
 
     $hypermedia = new Hypermedia; 
 
@@ -30,12 +30,12 @@
 
 <?php $i=0; foreach($pages as $currentpage): $i++; ?>
 
-    <?php $outputs = $hypermedia->get($currentpage->url."/test/table-row?selector=published=0,children.count>0&onpage=50&page=1&cacshe=60","wire")->fetch(); 
+    <?php //$outputs = $hypermedia->get($currentpage->url."/test/table-row?selector=published=0,children.count>0&onpage=50&page=1&cacshe=60","wire")->fetch(); 
 
         if($i==1){
             //dump($output);
         }
-        echo $outputs;
+        //echo $outputs;
         //dump($outputs);
         
     

@@ -136,3 +136,4 @@
 2023-02-07 21:32:42	admin	http://pwx.local/test/x/4	Method ProcessWire::findRaw does not exist or is not callable in this context (in C:\Dropbox\laragon\www\pwx\wire\core\Wire.php line 563)
 2023-02-07 21:35:53	guest	http://pwx.local/test/x/4	Unknown name(s) for findRaw: Property 'url' requires the PagePaths module be installed (in C:\Dropbox\laragon\www\pwx\wire\core\PagesRaw.php line 1762)
 2023-02-08 10:49:50	admin	http://pwx.local/processwire/module/	SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'ProcessProCache' for key 'class' (in C:\Dropbox\laragon\www\pwx\wire\core\WireDatabasePDOStatement.php line 168)
+2023-02-08 17:16:59	admin	http://pwx.local/test/test/table-wire?selector=count&cache=20&onpage=4	Unknown method 'data' - specify a valid Sanitizer name or WireInputData method (in C:\Dropbox\laragon\www\pwx\wire\core\WireInputData.php line 522)

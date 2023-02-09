@@ -184,32 +184,34 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		$hypermedias= new Hypermedias;
 		$hypermedias->get($page,"live");
 
-		exit;
+		dumpBig($hypermedias);
 
 				
 
 		$activeSegments = $page->get("_urlSegments") ? $page->get("_urlSegments") : wire()->input->urlSegments();
 
+		
+		
+		
+
+		//$activeGet = $page->get("_get") ? $page->get("_get") : wire()->input->get();
+		//$activeRequestMethod = $page->get("_requestMethod") ? $page->get("_requestMethod") : wire()->input->requestMethod();
+		
+		//$page->setQuietly("_hasUrlSegments",$activeSegments);
+		//$page->setQuietly("_hasGet",$activeGet);
+		//$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
+
+
+		//$hypermedia = new Hypermedia;
+
+		//$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
+
+		
+		$page->setQuietly("_hm",$hypermedias);
+		$page->template->setFilename($hypermedias->template_path);
+
 		dumpBig($page);
-		dumpBig($activeSegments);
 		
-		//exit;
-
-		$activeGet = $page->get("_get") ? $page->get("_get") : wire()->input->get();
-		$activeRequestMethod = $page->get("_requestMethod") ? $page->get("_requestMethod") : wire()->input->requestMethod();
-		
-		$page->setQuietly("_hasUrlSegments",$activeSegments);
-		$page->setQuietly("_hasGet",$activeGet);
-		$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
-
-
-		$hypermedia = new Hypermedia;
-
-		$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
-
-		$page->setQuietly("_hasTemplateFile",$hypermedia->activeTemplateFromPossibles($possiblePaths));
-		$page->template->setFilename($hypermedia->activeTemplateFromPossibles($possiblePaths));
-
 		/*
 
 		

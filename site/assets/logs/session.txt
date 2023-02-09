@@ -4,3 +4,7 @@
 2023-02-05 11:20:31	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
 2023-02-06 07:42:20	?	?	User 'admin' - Session timed out (session older than 86400 seconds) (IP: 127.0.0.1)
 2023-02-06 09:09:44	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
+2023-02-08 16:54:13	?	?	User 'admin' - Session timed out (session older than 86400 seconds) (IP: 127.0.0.1)
+2023-02-08 16:56:50	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
+2023-02-09 06:16:17	?	?	User 'admin' - Error: Session fingerprint changed (IP address or useragent) (IP: 127.0.0.1)
+2023-02-09 06:16:29	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
