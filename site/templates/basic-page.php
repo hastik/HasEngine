@@ -36,15 +36,9 @@
 
 	?>
 		
-	<?php foreach($page->get("_hasUrlSegments") as $segment): ?>
-		<?=$segment?>,
-	<?php endforeach; ?>
 
 			<br>
 			
-	<?php foreach($page->get("_hasGet") as $key => $value ): ?>
-		<?=$key?> = <?=$value?>,
-	<?php endforeach; ?>
 
 
 

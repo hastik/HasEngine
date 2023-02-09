@@ -8,22 +8,23 @@ class Hypermedias{
 
     public $url;
     public $url_decoded;
-    public $url_cachable;
-    public $url_cachable_decoded;
 
     public $path;
-    public $path_no_query;
-    public $path_query;
-    public $path_query_decoded;
-    public $path_data;
+    public $path_decoded;
+
 
     public $segments;
     public $segments_parts;
+    public $segments_parts_decoded;
+    public $segments_data;
     //public $segments_no_query;
 
     public $get;
     public $get_decoded;
     public $get_data;
+
+
+    public $url_data;
 
     public $page;
     public $page_url;
@@ -46,15 +47,18 @@ class Hypermedias{
 
     function __construct(){
         $table = array(
-            "=" => "_eql_",
-            ">" => "_grt_",
-            "<" => "_lwr_",
-            "!" => "_exc_",
-            "%" => "_pct_",
-            "*" => "_ast_",
-            "~" => "_tld_",
-            "|" => "_bar_",
-            "&" => "_amp_",
+            "=" => "_eq_",
+            ">" => "_gr_",
+            "<" => "_lw_",
+            "!" => "_ex_",
+            "%" => "_pc_",
+            "*" => "_as_",
+            "~" => "_tl_",
+            "|" => "_br_",
+            "&" => "_am_",
+            "," => "_cm_",
+            "." => "_dt_",
+            "$" => "_dl_",
         );
         $this->char_table = $table;
 
@@ -100,7 +104,6 @@ class Hypermedias{
     }
 
     function decodedQueryToArray($query){
-        $query = substr($query,2,null);
         
         $query_parts=explode("&",$query);
         
@@ -165,7 +168,7 @@ class Hypermedias{
         $this->segments = $this->segmentsFromUrl($this->url);
 
         
-        dump($this);
+        //dump($this);
         
         return $this;
     }
@@ -177,7 +180,7 @@ class Hypermedias{
         $this->page_url = $page->url;
        // dump(wire()->input->urlSegments());
         $this->segments = isset(wire()->input->urlSegments()[1]) ? wire()->input->urlSegments() : null;
-        $this->get_data = wire()->input->get();
+        $this->get_data = wire()->input->get()->getArray();
        
         $this->get = http_build_query($_GET);
 
@@ -209,19 +212,18 @@ class Hypermedias{
 
         $segments = $this->segments;
 
-        $this->path = $this->page_url;
-        $this->path .= $this->segments ? "/".implode("/",$this->segments) : "";
+        
 
-        if($segments){
 
+        if($segments){            
             $u=0;
             foreach($segments as $segment){
                 if($segment[0]=="q"){
-                    $segments_parts["query"] = $segment;
+                    $segments_parts["query"] = substr($segment,2,null);
                 }
-                elseif($segment[0]=="p"){
-                    $segments_parts["template_uri"] = $segment;
-                    $this->template_uri = implode("/",explode("_",substr($segments_parts["template_uri"],2,null)));
+                elseif($segment[0]=="r"){
+                    $segments_parts["route"] = substr($segment,2,null);
+                    $this->template_uri = implode("/",explode("_",$segments_parts["route"]));                    
                 }
                 else{
                     $segments_parts["undefined"][]=$segment;
@@ -229,6 +231,28 @@ class Hypermedias{
             }
 
             $this->segments_parts = $segments_parts;
+
+
+            $segments_parts_decoded = $segments_parts;
+            if(isset($segments_parts_decoded["query"])){
+                $segments_parts_decoded["query"] = $this->translateFromUrl($segments_parts_decoded["query"]);
+            }
+            $this->segments_parts_decoded = $segments_parts_decoded;
+
+
+            $segments_data;
+            
+            foreach($this->segments_parts_decoded as $name => $value){
+                //dump($value);
+                if($name == "route"){
+                    $segments_data["route"] = $value;
+                }
+                if($name == "query"){
+                    $segments_data["query"] = $this->decodedQueryToArray($value);
+                }
+            }
+            
+            $this->segments_data = $segments_data;
         
         }
         
@@ -246,27 +270,108 @@ class Hypermedias{
             $this->path_data = $this->decodedQueryToArray($this->path_query_decoded);
         }   
         
-
+        $url_data = array();
+        $url_data["page"] = $this->page_url;
         
-        $this->path_no_query = is_array($this->segments_no_query) ? "/".implode("/",$this->segments_no_query) : null;
-
-
-        $this->url_cachable = $this->page_url.$this->path_no_query;
-        $this->url_cachable .= $this->path_query ? "/".$this->path_query : "" ;
-
-        $this->url_cachable_decoded = $this->page_url.$this->path_no_query;
-        $this->url_cachable_decoded .= $this->path_query_decoded ? "/".$this->path_query_decoded : "";
+        if(isset($this->segments_data["route"])){
+            $url_data["route"] = $this->segments_data["route"];
+        }
+        if(isset($this->segments_data["query"])){
+            $url_data["query"] = $this->segments_data["query"];
+        }
+        if($this->get_data){
+            $url_data["get"] = $this->get_data;
+        }
         
-        $this->url_decoded = $this->url_cachable_decoded;
+        $this->url_data = $url_data;
+        
+
+
+        $this->path = $this->page_url;
+        $this->path .= $this->segments ? "/".implode("/",$this->segments) : "";
+
+        $this->path_decoded = $this->page_url;
+        $this->path_decoded .= $this->segments ? "/".implode("/",$this->segments_parts_decoded) : "";;
+        
+        $this->url = $this->path;
+        $this->url .= $this->get ? "?".$this->get : "";
+        
+        $this->url_decoded = $this->path_decoded;
         $this->url_decoded .= $this->get_decoded ? "?".$this->get_decoded : "";
 
-        $this->url = $this->url_cachable;
-        $this->url .= $this->get ? "?".$this->get : "";
-
-
-
+        //$this->setQueryData("limit",40);
+        //$this->unsetQueryData("selector");
+        dump($this->getUrl());
+        dump($this->getUrlDecoded());
         
+    }
 
+    function implodeAssocArray($ch,$array){
+
+        $output_array = array();
+        foreach($array as $name => $value){
+            $output_array[]=$name."=".$value;
+        }
+
+        return implode($ch,$output_array);
+    }
+
+
+    function getUrlDecoded(){
+
+        $data = $this->url_data;
+
+        $url="";
+
+        $url .= isset($data["page"]) ? $data["page"] : "";
+        $url .= isset($data["route"]) ? "/r-".$data["route"] : "";
+        $url .= isset($data["query"]) ? "/q-".$this->implodeAssocArray("&",$data["query"]) : "";
+        $url .= isset($data["get"]) ? "?".$this->implodeAssocArray("&",$data["get"]) : "";
+
+        return $url;
+
+    }
+
+    function getUrl(){
+
+        $data = $this->url_data;
+
+        $url="";
+
+        $url .= isset($data["page"]) ? $data["page"] : "";
+        $url .= isset($data["route"]) ? "/r-".$data["route"] : "";
+        $url .= isset($data["query"]) ? "/q-".$this->translateToUrl($this->implodeAssocArray("&",$data["query"])) : "";
+        $url .= isset($data["get"]) ? "?".$this->implodeAssocArray("&",$data["get"]) : "";
+
+        return $url;
+
+    }
+
+    function setQueryData($name,$value){
+        return $this->setData("query",$name,$value);
+    }
+
+    function unsetQueryData($name){
+        return $this->unsetData("query",$name);
+    }
+
+    function setData($space,$name,$value){
+        $this->url_data[$space][$name]=$value;
+        return $this;
+    }
+
+    function unsetData($space,$name){
+        unset($this->url_data[$space][$name]);
+        return $this;
+    }
+
+
+    function getData($space,$name){
+        return $this->url_data[$space][$name];
+    }
+
+    function getQueryData($name){        
+        return $this->getData("query",$name);
     }
 
 
@@ -307,8 +412,8 @@ class Hypermedias{
     // TODO aktivní templaty uložit, abych pro stejný path_no_query nemusel cel0 kolečko opakovat
     function resolveTemplatePath(){
         $template = $this->page->template->name;
-        $path_no_query = $this->path_no_query;
-        $path_in_api = $template.$path_no_query;
+        
+        $path_in_api = $template."/".$this->template_uri;
 
         if(isset($this->templates_resolved_paths[$path_in_api])){
             $this->template_path = $this->templates_resolved_paths[$path_in_api];
@@ -332,7 +437,13 @@ class Hypermedias{
         if(!$template_uri){
             $template_uri = $this->template_uri;
         }
-
+        
+        if($template_uri){
+            $activeSegments = explode("/",$template_uri);
+        }
+        else{
+            $activeSegments = array();
+        }
         
 
         $pathsToApi = $this->templates_locations;
