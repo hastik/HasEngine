@@ -253,6 +253,8 @@ class Hypermedias{
         $this->completeData();
         
         $this->resolveTemplatePath();
+
+        dump($this);
         
         //dumpBig($this);
 
@@ -291,6 +293,7 @@ class Hypermedias{
             if(isset($segments_parts_decoded["query"])){
                 $segments_parts_decoded["query"] = $this->translateFromUrl($segments_parts_decoded["query"]);
             }
+
             $this->segments_parts_decoded = $segments_parts_decoded;
 
 
@@ -344,7 +347,7 @@ class Hypermedias{
         $this->path = $this->page_url;
         $this->path .= $this->segments ? "/".implode("/",$this->segments) : "";
 
-        dump($this);
+        
 
         $this->path_decoded = $this->page_url;
         $this->path_decoded .= $this->segments ? "/".implode("/",$this->segments_parts_decoded) : "";;
@@ -355,6 +358,8 @@ class Hypermedias{
         $this->url_decoded = $this->path_decoded;
         $this->url_decoded .= $this->get_decoded ? "?".$this->get_decoded : "";
 
+
+        
         //$this->setQueryData("limit",40);
         //$this->unsetQueryData("selector");
         //dump($this->getUrl());

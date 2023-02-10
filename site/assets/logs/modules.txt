@@ -247,3 +247,35 @@
 2023-02-08 15:20:38	admin	http://pwx.local/http404	Saved module info caches
 2023-02-08 16:57:47	admin	http://pwx.local/http404	Saved module info caches
 2023-02-09 07:28:53	admin	http://pwx.local/processwire/?login=1	Saved module info caches
+2023-02-10 07:26:46	admin	http://pwx.local/	Saved module info caches
+2023-02-10 07:27:20	admin	http://pwx.local/	Saved module info caches
+2023-02-10 07:27:30	admin	http://pwx.local/	Saved module info caches
+2023-02-10 07:27:38	admin	http://pwx.local/test/generated1/r-test_table-row	Saved module info caches
+2023-02-10 07:27:41	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:28:33	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:28:36	admin	http://pwx.local/test/generated1/r-test_table-row	Saved module info caches
+2023-02-10 07:28:38	admin	http://pwx.local/	Saved module info caches
+2023-02-10 07:38:11	admin	http://pwx.local/test/generated1/r-test_table-row	Saved module info caches
+2023-02-10 07:38:12	admin	http://pwx.local/test/generated1/r-test_table-row	Saved module info caches
+2023-02-10 07:38:26	admin	http://pwx.local/	Saved module info caches
+2023-02-10 07:38:57	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:39:06	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:39:12	admin	http://pwx.local/test/generated1/r-test_table-row	Saved module info caches
+2023-02-10 07:39:52	admin	http://pwx.local/processwire	Saved module info caches
+2023-02-10 07:39:52	admin	http://pwx.local/processwire/	Saved module info caches
+2023-02-10 07:39:53	admin	http://pwx.local/processwire/page/	Saved module info caches
+2023-02-10 07:39:53	admin	http://pwx.local/processwire/page/list/?id=1&render=JSON&start=0&lang=0&open=0-0&mode=actions	Saved module info caches
+2023-02-10 07:39:57	admin	http://pwx.local/processwire/module/navjson/?site=1	Saved module info caches
+2023-02-10 07:39:58	admin	http://pwx.local/processwire/module/navjson/?configurable=1	Saved module info caches
+2023-02-10 07:40:00	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:40:07	admin	http://pwx.local/processwire/module/?site=	Saved module info caches
+2023-02-10 07:40:21	admin	http://pwx.local/processwire/module/?reset=1	Saved module info caches
+2023-02-10 07:40:21	admin	http://pwx.local/processwire/module/?reset=1	Saved module info caches
+2023-02-10 07:40:21	admin	http://pwx.local/processwire/module/?reset=1	Found 7 module(s) missing file: Less => C:/Dropbox/laragon/www/pwx/site/modules/Less/Less.module, MagicPages => C:/Dropbox/laragon/www/pwx/site/modules/MagicPages/MagicPages.module, ProcessProCache => C:/Dropbox/laragon/www/pwx/site/modules/ProcessProCache/ProcessProCache.module, ProcessTracyAdminer => C:/Dropbox/laragon/www/pwx/site/modules/ProcessTracyAdminer/ProcessTracyAdminer.module, ProcessWireUpgradeCheck => C:/Dropbox/laragon/www/pwx/site/modules/ProcessWireUpgradeCheck/ProcessWireUpgradeCheck.module, RockMigrations => C:/Dropbox/laragon/www/pwx/site/modules/RockMigrations/RockMigrations.module, TracyDebugger => C:/Dropbox/laragon/www/pwx/site/modules/TracyDebugger/TracyDebugger.module
+2023-02-10 07:40:23	admin	http://pwx.local/processwire/module/?reset=2	Saved module info caches
+2023-02-10 07:43:45	admin	http://pwx.local/test/generated0/r-test_table-row/q-selector_eq_template_eq_basic-page_am_limit_eq_1?selector=published_0_children.count_0&onpage=50&limit=1000&cacshe=60	Saved module info caches
+2023-02-10 07:43:47	admin	http://pwx.local/processwire/module/?reset=2	Saved module info caches
+2023-02-10 07:44:59	admin	http://pwx.local/processwire/module/?reset=2	Saved module info caches
+2023-02-10 07:45:04	admin	http://pwx.local/processwire/module/?reset=1	Saved module info caches
+2023-02-10 07:45:04	admin	http://pwx.local/processwire/module/?reset=1	Found 7 module(s) missing file: Less => C:/Dropbox/laragon/www/pwx/site/modules/Less/Less.module, MagicPages => C:/Dropbox/laragon/www/pwx/site/modules/MagicPages/MagicPages.module, ProcessProCache => C:/Dropbox/laragon/www/pwx/site/modules/ProcessProCache/ProcessProCache.module, ProcessTracyAdminer => C:/Dropbox/laragon/www/pwx/site/modules/ProcessTracyAdminer/ProcessTracyAdminer.module, ProcessWireUpgradeCheck => C:/Dropbox/laragon/www/pwx/site/modules/ProcessWireUpgradeCheck/ProcessWireUpgradeCheck.module, RockMigrations => C:/Dropbox/laragon/www/pwx/site/modules/RockMigrations/RockMigrations.module, TracyDebugger => C:/Dropbox/laragon/www/pwx/site/modules/TracyDebugger/TracyDebugger.module
+2023-02-10 07:45:06	admin	http://pwx.local/processwire/module/?reset=2	Saved module info caches

@@ -3,7 +3,8 @@
 
 
 include "hypermedia.php";
-include "shypermedia.php";
+include "hypermediaResource.php";
+//include "shypermedia.php";
 
 /**
  * ProcessWire “Hello world” demonstration module
@@ -57,14 +58,15 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 */
 	public function init() {
 
-		$this->hypermedia = new Hypermedias;
+		$this->hypermedia = new Hypermedia;
 
-		$this->wire()->set("hmx", $this->hypermedia);	
+		$this->wire()->set("hypermedia", $this->hypermedia);	
 
 		// Add a hook after the $pages->save, to issue a notice every time a page is saved
 		$this->pages->addHookAfter('saved', $this, 'pageSaveHookExample'); 
 
-		$this->addHookBefore('Page::render', $this, 'pageRenderHypermediaProcess');
+		//$this->addHookBefore('Page::loaded', $this, 'pageLoadHypermedia');
+		$this->addHookBefore('Page::render', $this, 'pageRenderHypermedia');
 
 		// note use of our configurable property: $this->useHello
 		if($this->useHello) {
@@ -143,6 +145,18 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		// You may remove this method if you do not need it
 	}
 
+
+	public function pageLoadHypermedia(HookEvent $event) {
+		$page = $event->object; /** @var Page $page */
+		
+
+		if($page->template->name === 'admin' && wire("user")->isLoggedin() ){
+			return;
+		}
+		$this->hypermedia->pageOnLoadHook($page);
+		dump("Hook");
+	}
+
 	/**
 	 * Hook after $pages->save() method 
 	 * 
@@ -172,24 +186,40 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 * @param HookEvent $event
 	 *
 	 */
+
+	public function pageRenderHypermedia(HookEvent $event) {
+
+		$page = $event->object; /** @var Page $page */
+
+		wire("hypermedia")->getLive($page);
+		$page->template->setFilename($page->_hypermedia->template_path);
+
+		dump($page);
+
+	}
+
 	public function pageRenderHypermediaProcess(HookEvent $event) {
 
 		$page = $event->object; /** @var Page $page */
 
+		dump("render");exit;
 
 		if($page->template->name === 'admin' && wire("user")->isLoggedin()){
 			return;
 		}
 
 
+
+		$hm = new Hypermedias;
+
 		if(is_array($page->get("_urlSegments"))){			
-			$this->hypermedia->get($page,"wirelive");
+			$hm->get($page,"wirelive");
 			
 		}
 		elseif(isset(wire()->input->urlSegments()[1])){
 			//dump(wire()->input->urlSegments());
 			
-			$this->hypermedia->get($page,"live");
+			$hm->get($page,"live");
 		}
 		else{
 			return;
@@ -216,8 +246,8 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		//$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
 
 		
-		$page->setQuietly("_hm",clone $this->hypermedia);
-		$page->template->setFilename($this->hypermedia->template_path);
+		$page->setQuietly("_hm",$hm);
+		$page->template->setFilename($hm->template_path);
 
 		//dumpBig($page);
 		
