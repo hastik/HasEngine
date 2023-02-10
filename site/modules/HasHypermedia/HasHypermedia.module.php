@@ -194,7 +194,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		wire("hypermedia")->getLive($page);
 		$page->template->setFilename($page->_hypermedia->template_path);
 
-		dump($page);
+		//dump($page);
 
 	}
 

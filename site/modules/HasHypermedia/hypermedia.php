@@ -90,7 +90,7 @@ class Hypermedia {
     public function getLive($page){
 
         if($page->get("_hypermedia")){
-            dump("no");
+            //dump("no");
             return;
         }
         
