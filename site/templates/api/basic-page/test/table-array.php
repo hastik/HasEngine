@@ -5,12 +5,18 @@
 <?php 
 
     //$pages = wire($pages)->findMany("template=basic-page");
-    $hm = $page->_hm;
-    $limit = $hm->getQueryData("limit");
-    $pages = $page->children("limit=$limit");
+    //$pages = $page->children("limit=1000",["loadPages=false"]);
+    //$pages = wire("pages")->find("template=basic-page,field=title|pocet",["loadPages=false"]); //,["loadPages=true"]
+    //$pages = $page->children("field=title|pocet,limit=1000");
+    //$pages = $page->children();
+    //bd($pages);exit;
     //$pages = wire("pages")->findRaw("template=basic-page","title,pocet");
+    //bd($test);
+   
+    $limit = 50;
+    $parent = wire("pages")->get("/test");
+    $pages = wire("pages")->findRaw("parent=$parent,template=basic-page,limit=$limit","title,pocet,url");;
 
-    //dump($limit);
 
 ?>
 
@@ -34,12 +40,7 @@
 
 </style>
 <div class="pills">
-    <a href="<?=$hm->setQueryData("limit",1)->getUrl()?>">1</a>
-    <a href="<?=$hm->setQueryData("limit",10)->getUrl()?>">10</a>
-    <a href="<?=$hm->setQueryData("limit",100)->getUrl()?>">100</a>
-    <a href="<?=$hm->setQueryData("limit",500)->getUrl()?>">500</a>
-    <a href="<?=$hm->setQueryData("limit",1000)->getUrl()?>">1000</a>
-
+    
 </div>
 
 <table role="grid">
@@ -55,17 +56,16 @@
 
 
 
-
+    <tbody id="tbody">
 <?php $i=0; foreach($pages as $page): $i++; ?>
 
-    <tr>
-        <td><?=$i?></td>
-        <td><?=$page->title?></td>
-        <td><?=$page->pocet?></td>
-        <td><a href="<?=$page->url?>/r-test_table-row-edit" hx-get="<?=$page->url?>/r-test_table-row-edit" hx-target="closest tr" hx-swap="outerHTML"  href="x">Editovat</a></td>
-    </tr>
+    <?php $output = wire("hypermedia")->getWiredFromArray($page["url"]."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60",$page); 
+
+        echo $output->include();
+    
+    ?>
 
 <?php endforeach; ?>
-
+</tbody>
 
 </table>

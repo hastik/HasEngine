@@ -94,8 +94,8 @@ class Hypermedia {
             return;
         }
         
-        $url = wire("input")->url."?";
-        $url .= wire("input")->queryString ? wire("input")->queryString : "";
+        $url = wire("input")->url;
+        $url .= wire("input")->queryString ? "?".wire("input")->queryString : "";
         return $this->get($url,$page,"live");
         
     }
@@ -130,7 +130,7 @@ class Hypermedia {
 
 
         $possiblePaths = $this->prepareTemplatePathsFromSegments($router_str);
-        bd($router_str);
+        //bd($router_str);
 
         if($router_str){
             if(isset($this->template_resolved_paths[$router_str])){

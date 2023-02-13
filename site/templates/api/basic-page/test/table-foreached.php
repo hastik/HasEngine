@@ -5,17 +5,12 @@
 <?php 
 
     //$pages = wire($pages)->findMany("template=basic-page");
-    //$pages = $page->children("limit=1000",["loadPages=false"]);
-    //$pages = wire("pages")->find("template=basic-page,field=title|pocet",["loadPages=false"]); //,["loadPages=true"]
-    //$pages = $page->children("field=title|pocet,limit=1000");
-    //$pages = $page->children();
-    //bd($pages);exit;
-    //$pages = wire("pages")->findRaw("template=basic-page","title,pocet");
-    //bd($test);
-   
+    //$limit = wire($page->_hypermedia)->getQueryData("limit");
     $limit = 50;
     $pages = $page->children("limit=$limit");
+    //$pages = wire("pages")->findRaw("template=basic-page","title,pocet");
 
+    //dump($limit);
 
 ?>
 
@@ -55,16 +50,17 @@
 
 
 
-    <tbody id="tbody">
+
 <?php $i=0; foreach($pages as $page): $i++; ?>
 
-    <?php $output = wire("hypermedia")->getWired($page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60"); 
-
-        echo $output->render();
-    
-    ?>
+    <tr>
+        <td><?=$i?></td>
+        <td><?=$page->title?></td>
+        <td><?=$page->pocet?></td>
+        <td><a href="<?=$page->url?>/r-basic-page_test_table-row-edit" hx-get="<?=$page->url?>/r-basic-page_test_table-row-edit" hx-target="closest tr" hx-swap="outerHTML"  href="x">Editovat</a></td>
+    </tr>
 
 <?php endforeach; ?>
-</tbody>
+
 
 </table>

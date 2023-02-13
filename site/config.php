@@ -47,7 +47,7 @@ $config->prependTemplateFile = '_init.php';
 $config->templateCompile = false;
 
 /*** INSTALLER CONFIG ********************************************************************/
-
+$config->useLazyLoading = true;
 
 /**
  * Installer: Database Configuration

@@ -58,9 +58,9 @@
     <tbody id="tbody">
 <?php $i=0; foreach($pages as $page): $i++; ?>
 
-    <?php $output = wire("hypermedia")->getWired($page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60"); 
+    <?php $output = wire("hypermedia")->getWiredFromPage($page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60",$page); 
 
-        echo $output->render();
+        echo $output->include();
     
     ?>
 
