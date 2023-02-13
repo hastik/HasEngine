@@ -190,5 +190,12 @@ class Hypermedia {
     }
     
 
+    public function hxLink($text,$link,$target,$select,$method = "get"){
+        ob_start();
+        ?><a href="<?=$link?>" hx-<?=$method?>="<?=$link?>" hx-target="<?=$target?>" hx-select="<?=$select?>" ><?=$text?></a><?php
+        $buffer = ob_get_contents();
+        @ob_end_clean();
+        return $buffer;
+    }
     
 }

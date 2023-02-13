@@ -128,6 +128,14 @@ class HypermediaResource {
         return $output;
     }
 
+    public function assocToArray($ch,$assoc){
+        $output = array();
+        foreach($assoc as $key => $name){
+            $output[]= $key.$ch.$name;
+        }
+        return $output;
+    }
+
 
     public function render(){
         if(method_exists($this->page,"setQuietly")){
@@ -162,6 +170,64 @@ class HypermediaResource {
         return $output;
     }
 
+
+    public function getUrl($coded = true){
+        //dump($this->data);
+        
+        $page_url = $this->data["page_url"];
+        $router = "r-".$this->data["router"];
+        if(count($this->data["query"])){
+            $query_str = "q-".implode("&",$this->assocToArray("=",$this->data["query"]));
+            $query_str_coded = wire("hypermedia")->codeUrl($query_str);
+            $query_str_final = $coded ? $query_str_coded : $query_str;
+        }
+        if(count($this->data["get"])){
+            $get_str = implode("&",$this->assocToArray("=",$this->data["get"]));
+        }
+
+        $link = $page_url."/".$router;"/";
+        $link .= $query_str_final ? "/".$query_str_final : "";
+        $link .= $get_str ? "?".$get_str : "";
+        
+        return $link;
+    }
+
+    public function ahref(){
+        $ref = $this->getUrl(true);
+        $text = $this->getUrl(false);
+
+        return "<a class='hm-helperlink' href='$ref'>$text</a>";
+    }
+
+    public function getVal($name,$default = null){
+
+        if(isset($this->data["get"][$name])){
+            return $this->data["get"][$name];
+        }
+        
+        if(isset($this->data["query"][$name])){
+            return $this->data["query"][$name];
+        }
+
+        return $default;
+        
+    }
+
+    public function setQueryVal($name,$value){
+        $this->setVal($name,$value,"query");
+
+        return $this;
+    }
+
+    public function setGetVal($name,$value){
+        $this->setVal($name,$value,"get");
+
+        return $this;
+    }
+
+    public function setVal($name,$value,$type){
+        $this->data[$type][$name] = $value;
+    }
 
 
 }

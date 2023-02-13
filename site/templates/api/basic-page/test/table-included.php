@@ -4,20 +4,48 @@
 
 <?php 
 
-    //$pages = wire($pages)->findMany("template=basic-page");
-    //$pages = $page->children("limit=1000",["loadPages=false"]);
-    //$pages = wire("pages")->find("template=basic-page,field=title|pocet",["loadPages=false"]); //,["loadPages=true"]
-    //$pages = $page->children("field=title|pocet,limit=1000");
-    //$pages = $page->children();
-    //bd($pages);exit;
-    //$pages = wire("pages")->findRaw("template=basic-page","title,pocet");
-    //bd($test);
-   
-    $limit = 50;
-    $pages = $page->children("limit=$limit");
-
+    $limit = $page->_hypermedia->getVal("limit",50);
+    
+    $min_count = $page->_hypermedia->getVal("count",70);
+    $order = $page->_hypermedia->getVal("sort","id");
+    $query = "pocet>$min_count, sort=$order, limit=$limit";
+    $pages = $page->children($query);
+    
 
 ?>
+
+<h4>Počet položek</h4>
+
+<?php
+
+    $filter_count = array();
+    $filter_count = array(5,10,20,40);
+    $name = "limit";
+    $target = "#tableincludes";
+    $select = "#tableincludes";
+
+    $options = array();
+    foreach($filter_count as $value){
+        $link=$page->_hypermedia->setQueryVal($name,$value)->getUrl();
+        $options[]= wire("hypermedia")->hxLink($value,$link,"#tableincludes","#tableincludes");
+    }
+    bd($options);
+
+?>
+<ul>
+    <?php foreach($options as $option) : ?>
+        <li><?=$option?></li>
+    <?php endforeach; ?>
+</ul>
+
+
+<h4>Minimum</h4>
+<ul>
+    <li><a href="<?=$page->_hypermedia->setQueryVal("count",50)->getUrl()?>">50</a></li>
+    <li><a href="<?=$page->_hypermedia->setQueryVal("count",80)->getUrl()?>">80</a></li>
+    <li><a href="<?=$page->_hypermedia->setQueryVal("count",100)->getUrl()?>">100</a></li>
+    <li><a href="<?=$page->_hypermedia->setQueryVal("count",1000)->getUrl()?>">1000</a></li>
+</ul>
 
 <style>
 
@@ -42,7 +70,7 @@
     
 </div>
 
-<table role="grid">
+<table role="grid" id="tableincludes">
 
     <thead>
         <tr>
@@ -58,7 +86,12 @@
     <tbody id="tbody">
 <?php $i=0; foreach($pages as $page): $i++; ?>
 
-    <?php $output = wire("hypermedia")->getWiredFromPage($page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60",$page); 
+    <?php 
+        $uri = $page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60";
+
+        //$link = $fragment->getUrl()->setQueryVar("published",0)->setQueryVar("limit",20)->setGetQuery("cache",20);
+
+    $output = wire("hypermedia")->getWiredFromPage($page->url."/r-basic-page_test_table-row/q-dsdas=dsadas?selector=published=0,children.count>0&onpage=50&limit=1000&cacshe=60",$page); 
 
         echo $output->include();
     

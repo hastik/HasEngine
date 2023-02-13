@@ -13,7 +13,7 @@ function printTime($time){
 $hmx = wire("hmx"); 
 bd($page);
 echo $page->title;
-echo $page->getTest();
+//echo $page->getTest();
 
 ?>
 <script src="https://unpkg.com/htmx.org@1.8.5"></script>
@@ -57,6 +57,9 @@ echo $page->getTest();
 
 
 <?php 
+
+
+
 
 
 
@@ -117,10 +120,14 @@ echo $page->getTest();
 		<h3>Rendered - List of included pages</h3>
 	
 		<?php 
-			$listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-cache=0?cache=0");
+			$listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-limit=20&count=40?count=90");
 			$out = $listIncluded->render();
+			$link = $listIncluded->ahref();
+			bd($link);
 			echo $listIncluded->timeReport();
+			echo "<div>$link</div>";
 			echo $out;
+
 		?>
 
 	</div>

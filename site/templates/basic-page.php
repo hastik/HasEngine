@@ -11,10 +11,12 @@
 
 
 <div id="content" style = "border: 3px dashed black; padding: 2rem;">
-	Basic page content ... <br>
+	Basic page content ..x <br>
 
 
 	<?php
+
+	bd($page);
 	
 		if($input->get()["generate"]){
 			$count = $input->get()["generate"];

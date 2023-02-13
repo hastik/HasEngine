@@ -21,6 +21,20 @@
 	
 	}
 
+	.hm-helperlink{
+		font-size: 10px;
+		display:block;
+		border: 1px solid blue;
+		color: blue;
+		padding: 2px 2px 2px 6px;
+		background: #f0f0f0;
+		margin: 3px;
+		border-left-width: 6px;
+	}
+	.hm-helperlink:hover{
+		font-size: 15px;
+	}
+
 </style>
 
 <div class="topbar">

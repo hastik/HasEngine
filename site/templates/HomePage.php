@@ -1,6 +1,6 @@
 <?php namespace ProcessWire;
 
-
+/*
 class DefaultPage extends Page {}
 
 class HomePage extends DefaultPage{
@@ -14,4 +14,4 @@ class HomePage extends DefaultPage{
     public function getTest(){
         return "test";
     }
-}
+}*/
