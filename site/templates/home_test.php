@@ -118,18 +118,18 @@ echo $page->title;
 
 	<div>
 		<h3>Rendered - List of included pages</h3>
-	
-		<?php 
-			$listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-limit=20&count=40?count=90");
-			$out = $listIncluded->render();
-			$link = $listIncluded->ahref();
-			bd($link);
-			echo $listIncluded->timeReport();
-			echo "<div>$link</div>";
-			echo $out;
+			<div class="card">
+			<?php 
+				$listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-limit=20&count=40?count=90");
+				$out = $listIncluded->render();
+				$link = $listIncluded->ahref();
+				bd($link);
+				echo $listIncluded->timeReport();
+				echo "<div>$link</div>";
+				echo $out;
 
-		?>
-
+			?>
+			</div>
 	</div>
 
 	<div>

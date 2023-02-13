@@ -4,6 +4,7 @@
 
 include "hypermedia.php";
 include "hypermediaResource.php";
+include "Templater/Templater.php";
 //include "shypermedia.php";
 
 /**

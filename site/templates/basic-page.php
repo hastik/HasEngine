@@ -11,7 +11,7 @@
 
 
 <div id="content" style = "border: 3px dashed black; padding: 2rem;">
-	Basic page content ..x <br>
+	Basic page content ..xz <br>
 
 
 	<?php

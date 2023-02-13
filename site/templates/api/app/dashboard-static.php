@@ -1,5 +1,5 @@
 <?php namespace ProcessWire;
-    bd($page);
+
 ?>
 <html>
     <head>
@@ -49,7 +49,7 @@
                     <!-- ========== Content Start ========== -->
                     <div class="content">
                         <div class="content-inner">
-                            <h3>Content</h3>
+                            <h3>Dashboard Static</h3>
                             <div class="card">
                                 <?php 
                                     $listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-limit=20&count=40?count=90");

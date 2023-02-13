@@ -109,7 +109,6 @@ class HypermediaResource {
         $this->data = $path_data;
         
 
-        //bd($path_data);
         if(isset($this->data["router"])){
             $this->template_path = wire("hypermedia")->resolveTemplatePath($this->data["router"]);
         }

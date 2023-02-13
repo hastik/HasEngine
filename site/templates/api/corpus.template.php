@@ -1,10 +1,10 @@
 <?php namespace ProcessWire;
-    bd($page);
+
 ?>
 <html>
     <head>
+    
     <script src="https://unpkg.com/htmx.org@1.8.5"></script>
-
     <link href="/site/templates/style.css" rel="stylesheet" />
 
     </head>
@@ -19,13 +19,14 @@
                                 Head
                             </div>
                     </div>
-                    <div class="sidebar-inner">
-                        Sidebar
+                    <div class="sidebar-inner dark">
+                        <h4>Sidebar</h4>
                         <!-- ========== Navigation Start ========== -->
                         <div class="nav">
                             Navigation
                             <li class="nav-li"><a href="/" class="nav-li-a">Home</a></li>
                             <li class="nav-li"><a href="/" class="nav-li-a">Test HP</a></li>
+                            
                             <li class="nav-li"><a href="/" class="nav-li-a">AI</a></li>
                             <li class="nav-li"><a href="/" class="nav-li-a">I6</a></li>
                         </div>
@@ -49,19 +50,7 @@
                     <!-- ========== Content Start ========== -->
                     <div class="content">
                         <div class="content-inner">
-                            <h3>Content</h3>
-                            <div class="card">
-                                <?php 
-                                    $listIncluded = wire("hypermedia")->getWired("/test/r-basic-page_test_table-included/q-limit=20&count=40?count=90");
-                                    $out = $listIncluded->render();
-                                    $link = $listIncluded->ahref();
-                                    bd($link);
-                                    echo $listIncluded->timeReport();
-                                    echo "<div>$link</div>";
-                                    echo $out;
-
-                                ?>
-                            </div>    
+                            <?=Templater::getPartial("content")?>
                         </div>    
                     </div>
                     <!-- ========== Content End ========== -->

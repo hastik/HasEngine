@@ -128,9 +128,9 @@ class Hypermedia {
 
     function resolveTemplatePath($router_str){
 
-
-        $possiblePaths = $this->prepareTemplatePathsFromSegments($router_str);
         //bd($router_str);
+        $possiblePaths = $this->prepareTemplatePathsFromSegments($router_str);
+        //bd($possiblePaths);
 
         if($router_str){
             if(isset($this->template_resolved_paths[$router_str])){
@@ -139,7 +139,8 @@ class Hypermedia {
             else{
                 foreach($possiblePaths as $path){
                     if(file_exists($path)){
-                        $this->template_resolved_paths[$router_str]= $path;                
+                        $this->template_resolved_paths[$router_str]= $path; 
+                        //bd($path);               
                         return $path;
                     }
                 }
@@ -185,6 +186,7 @@ class Hypermedia {
 
 		
         $this->template_paths = $possiblePaths;
+        //bd($possiblePaths);
         return $possiblePaths;
 
     }
