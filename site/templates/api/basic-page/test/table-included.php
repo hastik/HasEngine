@@ -2,14 +2,16 @@
 
 
 
-<?php 
-
+<?php
+    //dump($page->_hypermedia->getVal("limit",50));
+    //dump($page->_hypermedia);
     $limit = $page->_hypermedia->getVal("limit",50);
     
     $min_count = $page->_hypermedia->getVal("count",70);
     $order = $page->_hypermedia->getVal("sort","id");
     $query = "pocet>$min_count, sort=$order, limit=$limit";
     $pages = $page->children($query);
+    //dump($pages);
     
 
 ?>
@@ -29,7 +31,7 @@
         $link=$page->_hypermedia->setQueryVal($name,$value)->getUrl();
         $options[]= wire("hypermedia")->hxLink($value,$link,"#tableincludes","#tableincludes");
     }
-    bd($options);
+    //dump($options);
 
 ?>
 <ul>

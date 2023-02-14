@@ -26,6 +26,8 @@ class HypermediaResource {
     public function __construct($type){
         $this->time_started = microtime(true);
         $this->type = $type;
+
+        return $this;
     }
 
     public function setPage($page){
@@ -49,6 +51,10 @@ class HypermediaResource {
 
     public function initSelf()
     {
+
+        if(!$this->url){
+            $this->url = $this->getUrl(true);
+        }
 
         $this->request_method = "GET";
         //bd($this->url);
@@ -228,5 +234,21 @@ class HypermediaResource {
         $this->data[$type][$name] = $value;
     }
 
+    public function setRouter($router){
+        
+        if(strpos($router,"/")){
+            $router = str_replace("/","_",$router);
+        }
+        $this->data["router"] = $router;
+
+        return $this;
+    }
+
+    public function setPageUrl($url){
+        $this->data["page_url"] = $url;
+        $this->page_url = $url;
+
+        return $this;
+    }
 
 }

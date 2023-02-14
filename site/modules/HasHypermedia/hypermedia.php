@@ -1,6 +1,6 @@
 <?php namespace Processwire;
 
-
+use ProcessWire\WireException;
 
 class Hypermedia {
 
@@ -9,6 +9,8 @@ class Hypermedia {
     public $template_locations;
     public $template_paths;
     public $template_resolved_paths;
+
+    public $resources;
 
     public function __construct(){
         $table = array(
@@ -55,9 +57,8 @@ class Hypermedia {
     }
 
     function decodeUrl($url){
-        $output_array = array();
+        //$output_array = array();
         //$url = stringToArray($url);
-        
         foreach($this->char_table as $char => $code){
 
             $url=str_replace($code,$char,$url);
@@ -85,29 +86,47 @@ class Hypermedia {
         return $this->get($url,$page,"wire");
     }
 
-
+    public function getWiredFromResource(HypermediaResource $resource){
+        
+        $url = $resource->getUrl(false);
+        //bd($url);
+        $page = wire("pages")->getByPath($url,['allowUrlSegments' => true, 'allowGet' => true]);
+        unset($page->_hypermedia);
+       
+        return $this->get($url,$page,"wired",$resource);
+    }
 
     public function getLive($page){
-
+        dump($page->get("_hypermedia"));
         if($page->get("_hypermedia")){
             //dump("no");
             return;
         }
-        
+
         $url = wire("input")->url;
         $url .= wire("input")->queryString ? "?".wire("input")->queryString : "";
+        dump($url);
+        dump($page);
         return $this->get($url,$page,"live");
         
     }
 
-    public function get($url,$page,$type){
+    public function get($url,$page,$type,$resource = null){
 
-        $hm_resource = new HypermediaResource($type);
-        $hm_resource->set($url,$page->url);
+        if($resource){
+            $hm_resource = $resource;
+        }
+        else{
 
-        $hm_resource->initSelf();
-
+            $hm_resource = new HypermediaResource($type);
+            $hm_resource->set($url,$page->url);
+            //bd($hm_resource);
+        }
         
+        $hm_resource->initSelf();
+        
+        
+
         if(method_exists($page,"setQuietly")){
             $page->setQuietly("_hypermedia",$hm_resource);
             $hm_resource->setPage($page);
@@ -200,4 +219,38 @@ class Hypermedia {
         return $buffer;
     }
     
+    public function registerResource($name = null){
+
+        $newResource = new HypermediaResource("wire");
+
+        if($name){
+            $this->resources[$name] = $newResource;
+        }
+
+        return $newResource;
+
+    }
+
+    public function getRegisteredResource($name){
+        if(!isset($this->resources[$name])){
+            throw new WireException("Calling non registered resource with name = ".$name);
+        }
+        
+        return $this->resources[$name];
+    }
+
+    public function getWiredResource($resource){
+        if(is_string($resource)){
+            $wiredResource = $this->getRegisteredResource($resource);
+        }
+        elseif(is_object($resource)){
+            $wiredResource = $resource;
+        }
+        else{
+            throw new WireException("Trying to wire Resource of unknown type. Not string nor object");
+        }
+
+        return $this->getWiredFromResource($resource);
+
+    }
 }
