@@ -2,6 +2,8 @@
 
 use ProcessWire\WireException;
 
+use function ProcessWire\wire;
+
 class Hypermedia {
 
     public $char_table;
@@ -33,6 +35,7 @@ class Hypermedia {
 			"site" => wire()->config->paths->templates."api/",
 			"module" => wire()->config->paths->siteModules."api/"
 		];
+
     }
 
 
@@ -69,7 +72,10 @@ class Hypermedia {
 
 
     public function getWired($url){
+        //dump($url);
+        //dump("Wired");
         $page = wire("pages")->getByPath($url,['allowUrlSegments' => true, 'allowGet' => true]);
+        $page = clone $page;
         unset($page->_hypermedia);
 
         return $this->get($url,$page,"wire");
@@ -92,55 +98,71 @@ class Hypermedia {
         //bd($url);
         $page = wire("pages")->getByPath($url,['allowUrlSegments' => true, 'allowGet' => true]);
         unset($page->_hypermedia);
+        $page = clone $page;
        
         return $this->get($url,$page,"wired",$resource);
     }
 
     public function getLive($page){
-        dump($page->get("_hypermedia"));
+
+        
+        //dump("Live");
+        //dump($page->get("_hypermedia"));
         if($page->get("_hypermedia")){
             //dump("no");
             return;
         }
 
+    
         $url = wire("input")->url;
-        $url .= wire("input")->queryString ? "?".wire("input")->queryString : "";
-        dump($url);
-        dump($page);
+        $query_str = http_build_query($_GET, 'flags_');
+        $url .= $query_str ? "?".$query_str : "";
+
+        $main_resource = $this->registerResource("main");
+        $main_resource->set($url,wire("page")->url);
+        $main_resource->initSelf();
+        
+        //dump($this->resources["main"]);
+
+        //dump($url);
+        //dump($page);
         return $this->get($url,$page,"live");
         
     }
 
     public function get($url,$page,$type,$resource = null){
-
+        
         if($resource){
             $hm_resource = $resource;
         }
         else{
 
-            $hm_resource = new HypermediaResource($type);
+            $hm_resource = new HypermediaResource($type);            
             $hm_resource->set($url,$page->url);
-            //bd($hm_resource);
+            
         }
+
+        
         
         $hm_resource->initSelf();
-        
+        //bd($hm_resource);
         
 
         if(method_exists($page,"setQuietly")){
-            $page->setQuietly("_hypermedia",$hm_resource);
+            //$name = "_hypermedia".rand(100,999)."rand";
+            $name = "_hypermedia";
+            $page->setQuietly($name,$hm_resource);            
             $hm_resource->setPage($page);
+            
+            //dump($hm_resource);
             $page->template->setFilename($hm_resource->template_path);
         }
         else{            
+            
             $hm_resource->setPage($page);
             $page->_hypermedia = $hm_resource;            
         }        
         
-        //bd($hm_resource);
-        
-        
-
         return $hm_resource;
     }   
 
@@ -211,9 +233,10 @@ class Hypermedia {
     }
     
 
-    public function hxLink($text,$link,$target,$select,$method = "get"){
+    public function hxLink($text,$live_link,$casted_link,$target,$select,$method = "get"){
         ob_start();
-        ?><a href="<?=$link?>" hx-<?=$method?>="<?=$link?>" hx-target="<?=$target?>" hx-select="<?=$select?>" ><?=$text?></a><?php
+        ?><a href="<?=$casted_link?>" hx-<?=$method?>="<?=$live_link?>" hx-target="<?=$target?>" hx-select="<?=$select?>" ><?=$text?></a><a href="<?=$live_link?>" 
+        style='width:0.3em; height:0.3rem; border-radius: 100%; background-color:blueviolet; display: inline-block; margin:0.2em 0.5em'></a><?php
         $buffer = ob_get_contents();
         @ob_end_clean();
         return $buffer;
@@ -252,5 +275,9 @@ class Hypermedia {
 
         return $this->getWiredFromResource($resource);
 
+    }
+
+    public function getMainData(){        
+        return $this->resources["main"]->data;
     }
 }

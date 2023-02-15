@@ -147,7 +147,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	}
 
 
-	public function pageLoadHypermedia(HookEvent $event) {
+	public function pageLoadsHypermedia(HookEvent $event) {
 		$page = $event->object; /** @var Page $page */
 		
 
@@ -191,7 +191,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	public function pageRenderHypermedia(HookEvent $event) {
 
 		$page = $event->object; /** @var Page $page */
-
+		//bd($page);
 		wire("hypermedia")->getLive($page);
 		$page->template->setFilename($page->_hypermedia->template_path);
 

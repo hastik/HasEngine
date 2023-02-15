@@ -1,54 +1,32 @@
-<?php namespace ProcessWire; ?>
+<?php namespace ProcessWire;
+
+use Processwire\HypermediaResource;
+
+ ?>
 
 
 
 <?php
-
-
-    /*$res = clone $page->_hypermedia;
-
-    dump($res->getCastedUrl());
-    dump($res->getLiveUrl()); 
-
-    dump($res->data);
-    dump($res->main_data);
+    $page->resource->getVal('limit',25);
     
-    $res->setQueryVal("jmeno","ondra");
+    $min_count = $page->resource->getVal("count",70);
+    $order = $page->resource->getVal("sort","id");
 
-    dump($res->data);
-    dump($res->main_data);
-
-    dump($res->getCastedUrl());
-    dump($res->getLiveUrl());
-    
-    //dump($page->_hypermedia);
-    //dump(wire("hypermedia"));
-    //dump($page->_hypermedia->getVal("limit",50));
-    //dump($page->_hypermedia);*/
-    $limit = $page->_hypermedia->getVal("limit",1000);
-    
-    
-    $min_count = $page->_hypermedia->getVal("count",70);
-    $order = $page->_hypermedia->getVal("sort","id");
     $query = "pocet>$min_count, sort=$order, limit=$limit";
-    $pages = $page->children($query);
-    
 
+    $basicPages = $page->children($query);
     
-
 ?>
 
 <h4>Počet položek</h4>
 
-<?php $resource = clone $page->_hypermedia; ?>
-<?php
-
-    $filter_count = array();
+<?php 
+    $filter= new HypermediaResource($page);
     $filter_count = array(5,10,20,50);
-    $name = "limit";
-    $target = "#tableincludes";
-    $select = "#tableincludes";
-
+    $filter_var = "limit";
+    $filter_target = "#tableincludes";
+    $filter_select = "#tableincludes";
+    
     $options = array();
     
     foreach($filter_count as $value){
@@ -57,9 +35,15 @@
         $options[]= wire("hypermedia")->hxLink($value,$live_link,$casted_link,"#tableincludes","#tableincludes");
     }
 
-    //dump($page->_hypermedia);
-    //dump($resource);
-    //dump($options);
+    $states = new HypermediaObject(new HypermediaResource($page));
+    $states->setValues(array(
+        0 => "Unpublished",
+        1 => "Published",
+        2 => "Hidden"
+    ));
+    $states->setVar("pubstate");
+    $states->setTarget("#tableincludes");
+
 
 ?>
 <?php unset($resource) ?>

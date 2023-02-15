@@ -8,7 +8,7 @@ $same = wire("hypermedia")->getRegisteredResource("test");
 $same->setPageUrl("/test");
 $new_fragment = wire("hypermedia")->getWiredResource($same);
 
-bd($new_fragment);
+//bd($new_fragment);
 
 $fragment2 = wire("hypermedia")->registerResource("testx")->setRouter("basic-page/test/table-included")->setQueryVal("limit",4)->setGetVal("cache",60);
                                     //bd($fragment2->getUrl());
@@ -23,9 +23,16 @@ $fragment2 = wire("hypermedia")->registerResource("testx")->setRouter("basic-pag
                             <h3>Dashboard Dynamic</h3>
                             <div class="card">
                                 <?php 
-                                    $listIncluded = wire("hypermedia")->getWired("test/r-basic-page_test_table-included/q-limit_eq_2?cache=60");
+                                    $listIncluded = wire("hypermedia")->getWired("test/r-basic-page_test_table-included/q-test_eq_4");
                                     $listIncludedXX = wire("hypermedia")->getWired("test/r-basic-page_test_table-included/q-limit_eq_1?cache=60");
+                                    
+                                    //dump($listIncluded->uid);
+                                    //dump($listIncludedXX->uid);
+
                                     $out = $listIncluded->render();
+
+                                    
+
                                     $link = $listIncluded->ahref();
                                     goto test;
                                     echo "Ahoj";
@@ -70,7 +77,7 @@ $fragment2 = wire("hypermedia")->registerResource("testx")->setRouter("basic-pag
 
                                     //bd(wire("hypermedia")->resources["test"]);
                                     
-                                    bd($new_fragment);
+                                    //bd($new_fragment);
                                     //dump($new_fragment);
                                     $out = $new_fragment->render();
                                     $link = $new_fragment->ahref();
