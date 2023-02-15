@@ -3,8 +3,8 @@
 
 
 <?php
-
-
+    //$page->init();
+    dump($page);
     /*$res = clone $page->_hypermedia;
 
     dump($res->getCastedUrl());

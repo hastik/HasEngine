@@ -5,6 +5,13 @@
 include "hypermedia.php";
 include "hypermediaResource.php";
 include "Templater/Templater.php";
+
+
+include "HypermediaObjectConstructor.php";
+include "HypermediaCaster.php";
+include "HypermediaObject.php";
+include "HypermediaManager.php";
+
 //include "shypermedia.php";
 
 /**
@@ -191,11 +198,24 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	public function pageRenderHypermedia(HookEvent $event) {
 
 		$page = $event->object; /** @var Page $page */
-		//bd($page);
-		wire("hypermedia")->getLive($page);
-		$page->template->setFilename($page->_hypermedia->template_path);
 
-		//dump($page);
+		if($page->title == "novy"){
+			$page->initBeforePageRender();
+			//$page->renderMe();
+			//dump(HypermediaPage::$master_page);
+			//dump($page->resource);
+		}
+
+		else{
+			//bd($page);
+			wire("hypermedia")->getLive($page);
+			$page->template->setFilename($page->_hypermedia->template_path);
+
+			//dump($page);
+		}
+
+		
+		
 
 	}
 

@@ -1,5 +1,5 @@
 <?php namespace ProcessWire;
 
 
-class DefaultPage extends Page {}
+class DefaultPage extends HypermediaPage {}
 
