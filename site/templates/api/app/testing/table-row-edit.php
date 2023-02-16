@@ -15,7 +15,6 @@
 
     }
 
-    dump($page->resource->master_resource->temp_data["origin"]);
 
 ?>
 
@@ -26,7 +25,7 @@
         <form method="post">
             <input type="text" id="title" name="title" value="<?=$page->title?>">
             <input type="text" id="pocet" name="pocet" value="<?=$page->pocet?>">    
-            <input type="hidden" id="redirect" name="redirect" value="<?=$page->resource->master_resource->temp_data["origin"]?>">
+            <input type="hidden" id="redirect" name="redirect" value="<?="ds"?>">
             <input type="hidden" id="id" name="id" value="<?=$page->id?>">
             <input type="submit" hx-post="<?=wire("input")->url?>" hx-target="closest tr" hx-swap="outerHTML" hx-include="closest tr" value="Uložit" ></input>
         </form>

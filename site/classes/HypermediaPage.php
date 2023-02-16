@@ -122,8 +122,17 @@ class HypermediaPage extends Page {
 
     public function hxLink($text,$live_link,$casted_link,$target,$select,$method = "get"){
         ob_start();
-        ?><a href="<?=$casted_link?>" hx-<?=$method?>="<?=$live_link?>" hx-target="<?=$target?>" hx-select="<?=$select?>" ><?=$text?></a><a href="<?=$live_link?>" 
-        style='width:0.3em; height:0.3rem; border-radius: 100%; background-color:blueviolet; display: inline-block; margin:0.2em 0.5em'></a><?php
+        ?>
+            <a href="<?=$casted_link?>" 
+                hx-<?=$method?>="<?=$live_link?>" 
+                hx-target="<?=$target?>" 
+                hx-select="<?=$select?>"
+                hx-push-url="<?=$casted_link?>"
+                >
+                <?=$text?>
+            </a>
+            <a href="<?=$live_link?>" 
+                style='width:0.3em; height:0.3rem; border-radius: 100%; background-color:blueviolet; display: inline-block; margin:0.2em 0.5em'></a><?php
         $buffer = ob_get_contents();
         @ob_end_clean();
         return $buffer;

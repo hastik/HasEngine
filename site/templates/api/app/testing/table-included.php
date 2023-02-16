@@ -3,12 +3,10 @@
 use Processwire\HypermediaResource;
 
  ?>
-
+<script src="https://unpkg.com/htmx.org@1.8.5"></script>
 <?php
     
    
-    $id = $page->resource->getVal("id",0);
-
     $limit = $page->resource->getVal('limit',10);
     $min_count = $page->resource->getVal("count",70);
     $order = $page->resource->getVal("sort","id");
@@ -98,7 +96,7 @@ use Processwire\HypermediaResource;
 <?php $i=0; foreach($basicPages as $input_page): $i++; ?>
 
     <?php 
-        $source = $page->newSourceFromUrlAndPage($page->url."/r-app_testing_table-row/q-id=$id",$input_page);
+        $source = $page->newSourceFromUrlAndPage($page->url."/r-app_testing_table-row/q-id=4",$input_page);
 
         //dump($source);
         echo $source->include();
