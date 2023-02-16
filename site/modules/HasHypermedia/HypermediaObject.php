@@ -8,6 +8,8 @@ class HypermediaObject {
     public $master_resource;
     public $master_data;
 
+    public $caller_resource;
+
     public $data;
 
     public $request_method;
@@ -20,6 +22,8 @@ class HypermediaObject {
     public $url_decoded;
 
     public $test;
+    public $euid;
+    public $temp_data;
 
     public $hash;
     public $hashhash;
@@ -33,10 +37,27 @@ class HypermediaObject {
 
     static $char_table;
 
-    public function __construct($page,$full_url){
+    public function __construct($page = null,$full_url = null,$caller_resource = null){
+
+
+        $this->master_resource = HypermediaPage::$master_page->getResource();
+        $this->master_data = $this->master_resource->data ?? $this->master_resource->data ?? null;
+        
+        $this->request_method = "GET";
+
+        $this->caller_resource = $caller_resource;
+
+
+        if(!$page || !$full_url){
+            return;
+        }
+
         $this->page = $page;
+        $this->page->resource = $this;
         $this->input_url = $full_url;
         $this->page_url = $page->url;
+
+        //if(HypermediaPage::$i==1){dump($this);}
 
         $this->initCharTable();
         $this->initTemplateLocations();
@@ -106,11 +127,7 @@ class HypermediaObject {
 
     public function initSelfFromUrl(){
 
-        $this->master_resource = HypermediaPage::$master_page->getResource();
-        $this->master_data = $this->master_resource->data;
-        
-        $this->request_method = "GET";
-
+       
         $this->url = $this->input_url;
         $this->url_decoded = HypermediaObject::decodeUrl($this->url);
 
@@ -124,11 +141,12 @@ class HypermediaObject {
         $resource_data["page_url"] = $this->page_url;
         
         // GET ////////////////////////////////////////
-        //dump($url_parts[1]);
+
         if(isset($url_parts[1])){
+            
             $get = $url_parts[1];
             $get_data = ""; //todo tady možná to bude jinak ... možná array?
-            parse_str($get,$get_data);
+            parse_str($get,$get_data);                        
         }
         else{
             $get_data = array();
@@ -136,21 +154,21 @@ class HypermediaObject {
         
         $resource_data["get"] = $get_data;
         
+        
         // PATH
 
         $segments_str = str_replace($this->page_url,"",$url_parts[0]);
         
-        $this->hash = substr(md5($segments_str),0,2);
-        $this->hashhash = $this->master_resource->hash.$this->hash; //todo Špatěn má se brát caller_resource
-
         
+    
+        //dump($segments_str);
 
         if($segments_str){
             $segments = explode("/",$segments_str);
             if(!$segments[0]){
                 array_shift($segments);
             }
-            $resource_data = array("page_url" => $this->page_url);
+
             
             foreach($segments as $segment){
                 if($segment[0]=="r" && $segment[1]=="-"){
@@ -168,13 +186,20 @@ class HypermediaObject {
             $resource_data["query"] = array();
         }
 
+        
+        
         $this->data = $resource_data;
-
-        //$this->cleanEditUidFromUrl(); //todo 
+        
+        $this->cleanEditUidFromUrl(); 
+        $this->cleanTempFromUrl();
 
         if(isset($this->data["router"])){
             $this->template_path = $this->resolveTemplatePath($this->data["router"]);
         }
+        $this->page->initialized = true;;
+        $this->page->setQuietly("resource",$this);
+        
+        $this->generateHashes();
 
     }
 
@@ -271,4 +296,259 @@ class HypermediaObject {
         return $buffer;
     }
 
+    public function render(){
+        
+        if(method_exists($this->page,"setQuietly")){
+            $output = $this->page->render(); 
+            return $output;
+        }
+        else{
+            return "Renderuju array";
+        }
+    }
+
+
+    public function generateUrl($data,$coded = true,$get = 1){
+        //dump($get);
+        
+        $page_url = $data["page_url"];
+        $router = "r-".$data["router"];
+        //dump($data);
+        $query_str_final="";
+        if(isset($data["query"])){
+            if(count($data["query"])){
+                $query_str = "q-".implode("&",self::assocToArray("=",$data["query"]));
+                $query_str_coded = self::codeUrl($query_str);
+                $query_str_final = $coded ? $query_str_coded : $query_str;
+            }
+        }     
+        
+        
+        //dump($get==1);
+        if($get==1){
+            //dump("nenula");
+            $get_str = "";
+            if(isset($data["get"])){
+                if(count($data["get"])){
+                    $get_str = http_build_query($data["get"]);
+                }
+            }
+        }
+        else{
+            $get_str = null;
+        }
+        
+        
+        $link = $page_url."/".$router;"/";
+        $link .= $query_str_final ? "/".$query_str_final : "";
+        $link .= $get_str ? "?".$get_str : "";
+        //dump($link);
+
+        //dump($link);
+
+        return $link;
+
+    }
+
+    public function getCastedUrl($coded = true){
+        if($this->context == "live"){
+            return $this->generateUrl($this->data);    
+        }
+        else{
+            return $this->generateUrl($this->master_data);
+        }
+        
+    }
+
+    public function getLiveUrl($coded = true){
+        //dump($this->data);
+        return $this->generateUrl($this->data);
+    }
+
+    public function getLivePath($coded = true){
+        return $this->generateUrl($this->data,true,0);
+    }
+
+    public function setEditVal($uid){
+
+        $this->data["get"]["euid"] = $uid;
+        $this->master_data["get"]["euid"] = $uid;
+        
+        return $this;
+    }
+
+    public function setQueryVal($name,$value){        
+
+        $this->setValSmart($name,$value,"query");
+
+        //$this->partialInit();
+
+        return $this;
+    }
+
+    public function setGetVal($name,$value){
+        $this->setExtraGetVal($name,$value);
+
+        return $this;
+    }
+
+
+    public function setValSmart($name,$value,$location){
+
+        if($location == "get"){
+            $this->data["get"][$this->hash][$name] = $value;
+            $this->master_data["get"][$this->hash][$name] = $value;
+        }
+
+        if($location=="query"){
+            $this->data["query"][$name] = $value;
+            $this->master_data["get"][$this->hash][$name] = $value;
+        }
+
+    }
+
+
+    public function setVal($name,$value,$type){
+        
+        $this->data[$type][$name] = $value;
+        
+    }
+
+    public function setExtraGetVal($name,$value){
+            
+        //dump($this->hash);
+
+        $this->data["get"][$this->hash][$name]=$value;
+        $this->master_data["get"][$this->hash][$name]=$value;
+    }
+
+    public function setRouter($router){
+        
+        if(strpos($router,"/")){
+            $router = str_replace("/","_",$router);
+        }
+        $this->data["router"] = $router;
+
+        //$this->partialInit();
+
+        return $this;
+    }
+
+    public function setPageUrl($url){
+        $this->data["page_url"] = $url;
+        $this->page_url = $url;
+
+        //$this->partialInit();
+
+        return $this;
+    }
+
+    public function getVal($name,$default = null){
+        
+        if(isset($this->master_data["get"][$this->hash][$name])){
+            return $this->master_data["get"][$this->hash][$name];
+        }
+        
+        if(isset($this->data["query"][$this->hash][$name])){
+            return $this->data["query"][$this->hash][$name];
+        }
+
+        if(isset($this->data["get"][$this->hash][$name])){
+            return $this->data["get"][$this->hash][$name];
+        }
+
+        return $default;
+        
+    }
+
+    // depr
+    public function update(){
+
+        if(isset($this->data["page_url"]) && isset($this->data["router"]) ){
+
+            $this->generateHashes();
+
+            if(isset($this->data["get"]["undefined"])){
+                $this->data["get"][$this->hash] = $this->data["get"]["undefined"];
+                unset($this->data["get"]["undefined"]);
+            }
+            if(isset($this->master_data["get"]["undefined"])){
+                $this->master_data["get"][$this->hash] = $this->master_data["get"]["undefined"];
+                unset($this->master_data["get"]["undefined"]);
+            }
+
+        }
+
+        return $this;
+
+    }
+
+    public function generateHashes(){
+        $segments_str = $this->getLivePath();
+            
+            if(isset($this->master_resource->hash)){
+                $hash_inherited = $this->master_resource->hash;         
+            }
+            else{
+                $hash_inherited = "m";
+            }
+            //dump("update hash = ".$segments_str);
+
+            $hash_str = $this->page_url.$segments_str;
+
+            $this->hash = "h".substr(md5($hash_str),0,2);
+            $this->hashhash = $hash_inherited.$this->hash; 
+    }
+
+    public function cleanEditUidFromUrl(){
+
+        //bd($this->data["get"]["euid"]);
+        
+        if(isset($this->data["get"]["euid"])){            
+            //dump($this->data["get"]["euid"]);
+            $this->euid = $this->data["get"]["euid"];
+            unset($this->data["get"]["euid"]);
+        }
+        if(isset($this->data["query"]["euid"])){
+            $this->euid = $this->data["query"]["euid"];
+            unset($this->data["query"]["euid"]);
+        }
+
+        if(isset($this->master_data["get"]["euid"])){            
+            $this->euid = $this->master_data["get"]["euid"];
+            unset($this->master_data["get"]["euid"]);
+        }
+        if(isset($this->master_data["query"]["euid"])){
+            $this->euid = $this->master_data["query"]["euid"];
+            unset($this->master_data["query"]["euid"]);
+        }
+
+        //bd($this->euid);
+        //bd($this->master_resource->euid);
+        
+    }
+
+    public function cleanTempFromUrl(){
+        
+        if(isset($this->data["get"]["temp"])){
+            $this->temp_data= $this->data["get"]["temp"];
+            unset($this->data["get"]["temp"]);
+        }
+        if(isset($this->master_data["get"]["temp"])){
+            $this->temp_data= $this->master_data["get"]["temp"];
+            unset($this->master_data["get"]["temp"]);
+        }
+
+        
+    }
+
+    public function setTempVal($name,$value){
+        
+        $this->data["get"]["temp"][$name] = $value;
+        $this->master_data["get"]["temp"][$name] = $value;
+    }
+
+
+
 }
+

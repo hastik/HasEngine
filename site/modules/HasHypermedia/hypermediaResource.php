@@ -70,7 +70,7 @@ class HypermediaResource {
         $this->main_data = wire("hypermedia")->getMainData();
 
         $this->request_method = "GET";
-        
+        // //////////////////////////////////////
         $this->url_decoded = wire("hypermedia")->decodeUrl($this->url); // TODO tatz by šlo ptim. protože někdy už decoded máme
 
         //bd($this->url_decoded);
@@ -106,7 +106,7 @@ class HypermediaResource {
 
        
         $segments_str = str_replace($this->page_url,"",$url_parts[0]);
-
+        
         $this->hash = substr(md5($segments_str),0,4);
         //bd($segments_str);
 
@@ -173,6 +173,14 @@ class HypermediaResource {
         if(isset($this->main_data["query"]["euid"])){
             $this->euid = $this->main_data["query"]["euid"];
             unset($this->main_data["query"]["euid"]);
+        }
+        
+    }
+
+    public function cleanTempFromUrl(){
+
+        if(isset($this->data["get"]["temp"])){
+            $this->temp_data= $this->data["get"]["temp"];
         }
         
     }

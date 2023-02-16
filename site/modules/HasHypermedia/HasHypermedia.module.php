@@ -199,20 +199,17 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 
 		$page = $event->object; /** @var Page $page */
 
-		if($page->title == "novy"){
-			$page->initBeforePageRender();
-			//$page->renderMe();
-			//dump(HypermediaPage::$master_page);
-			//dump($page->resource);
-		}
 
-		else{
+		$page->initBeforePageRender();
+
+
+		//else{
 			//bd($page);
-			wire("hypermedia")->getLive($page);
-			$page->template->setFilename($page->_hypermedia->template_path);
+			//wire("hypermedia")->getLive($page);
+			//$page->template->setFilename($page->_hypermedia->template_path);
 
 			//dump($page);
-		}
+		//}
 
 		
 		

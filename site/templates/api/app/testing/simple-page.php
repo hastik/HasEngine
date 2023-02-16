@@ -1,10 +1,18 @@
 <?php namespace ProcessWire;
 
-dump($page);
 
-echo "tada";
 
-$newResource = $page->newSourceFromUrl("/o-nas/r-app_testing_static");
-dump($newResource);
+echo "<hr>";
 
-echo $newResource->include();
+
+$newResource = $page->newSourceFromUrl("/kontakt/r-app_testing_static");
+
+$byurl = $page->newSourceFromUrl("/kontakt/r-app_testing_static");
+
+
+?>
+
+<h3>Simple page</h3>
+
+<?=$newResource->include();?>
+<?=$byurl->include();?>

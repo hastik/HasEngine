@@ -1,3 +1,3 @@
 <?php namespace ProcessWire;
 
-echo "toto je statick8 str8nka";
+echo "<h4>".$page->title."</h4><p>Stránka ze static šablony</p><br>";
