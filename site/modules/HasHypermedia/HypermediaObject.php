@@ -37,6 +37,10 @@ class HypermediaObject {
 
     static $char_table;
 
+    public $time_started;
+    public $time_init;
+    public $time_output;
+
     public function __construct($page = null,$full_url = null,$caller_resource = null){
 
 
@@ -136,7 +140,7 @@ class HypermediaObject {
         $this->context = wire("input")->url == explode("?",$this->url)[0]
             ? "live"
             : "casted";
-        
+
         $resource_data = array();
         $resource_data["page_url"] = $this->page_url;
         
@@ -461,6 +465,28 @@ class HypermediaObject {
         
     }
 
+    public function removeVal($name){
+
+        /*dump("Jsem tady");
+        dump($this->hash);
+        dump($this->data["get"][$this->hash][$name]);*/
+
+        if(isset($this->master_data["get"][$this->hash][$name])){
+            unset($this->master_data["get"][$this->hash][$name]);
+        }
+        
+        if(isset($this->data["query"][$this->hash][$name])){
+            unset($this->data["query"][$this->hash][$name]);
+        }
+
+        if(isset($this->data["get"][$this->hash][$name])){
+            unset($this->data["get"][$this->hash][$name]);
+        }
+
+        return $this;
+
+    }
+
     // depr
     public function update(){
 
@@ -484,6 +510,7 @@ class HypermediaObject {
     }
 
     public function generateHashes(){
+        
         $segments_str = $this->getLivePath();
             
             if(isset($this->master_resource->hash)){
@@ -497,6 +524,7 @@ class HypermediaObject {
             $hash_str = $this->page_url.$segments_str;
 
             $this->hash = "h".substr(md5($hash_str),0,2);
+            //dump($this->hash);
             $this->hashhash = $hash_inherited.$this->hash; 
     }
 
@@ -546,8 +574,16 @@ class HypermediaObject {
         
         $this->data["get"]["temp"][$name] = $value;
         $this->master_data["get"]["temp"][$name] = $value;
+
+        return $this;
     }
 
+    public function getTempVal($name){
+        
+        $value = $this->temp_data[$name] ?? $this->temp_data[$name] ?? null;
+        return $value;
+
+    }
 
 
 }

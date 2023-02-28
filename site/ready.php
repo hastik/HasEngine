@@ -13,3 +13,14 @@ if(!defined("PROCESSWIRE")) die();
  * copy of all ProcessWire API variables.
  *
  */
+
+
+ function hmGet($resource){
+
+
+
+ }
+
+ function hmDateTime($dt){
+    return wire("datetime")->date("j.n.Y - H:m:s",$dt);
+ }

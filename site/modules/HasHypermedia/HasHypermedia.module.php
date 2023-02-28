@@ -2,15 +2,14 @@
 
 
 
-include "hypermedia.php";
-include "hypermediaResource.php";
 include "Templater/Templater.php";
-
 
 include "HypermediaObjectConstructor.php";
 include "HypermediaCaster.php";
 include "HypermediaObject.php";
 include "HypermediaManager.php";
+include "openai/autoload.php";
+include "HasOpenAI.php";
 
 //include "shypermedia.php";
 
@@ -66,9 +65,9 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 	 */
 	public function init() {
 
-		$this->hypermedia = new Hypermedia;
-
-		$this->wire()->set("hypermedia", $this->hypermedia);	
+		//$this->hypermedia = new Hypermedia;
+		$openai = new HasOpenAI();
+		$this->wire()->set("openai", $openai);	
 
 		// Add a hook after the $pages->save, to issue a notice every time a page is saved
 		$this->pages->addHookAfter('saved', $this, 'pageSaveHookExample'); 
@@ -199,107 +198,16 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 
 		$page = $event->object; /** @var Page $page */
 
+		if($page->template->name === 'admin'){
+			return;
+		}
 
 		$page->initBeforePageRender();
 
 
-		//else{
-			//bd($page);
-			//wire("hypermedia")->getLive($page);
-			//$page->template->setFilename($page->_hypermedia->template_path);
-
-			//dump($page);
-		//}
-
-		
-		
-
 	}
 
-	public function pageRenderHypermediaProcess(HookEvent $event) {
 
-		$page = $event->object; /** @var Page $page */
-
-		dump("render");exit;
-
-		if($page->template->name === 'admin' && wire("user")->isLoggedin()){
-			return;
-		}
-
-
-
-		$hm = new Hypermedias;
-
-		if(is_array($page->get("_urlSegments"))){			
-			$hm->get($page,"wirelive");
-			
-		}
-		elseif(isset(wire()->input->urlSegments()[1])){
-			//dump(wire()->input->urlSegments());
-			
-			$hm->get($page,"live");
-		}
-		else{
-			return;
-		}
-		
-				
-
-		$activeSegments = $page->get("_urlSegments") ? $page->get("_urlSegments") : wire()->input->urlSegments();
-
-		
-		
-		
-
-		//$activeGet = $page->get("_get") ? $page->get("_get") : wire()->input->get();
-		//$activeRequestMethod = $page->get("_requestMethod") ? $page->get("_requestMethod") : wire()->input->requestMethod();
-		
-		//$page->setQuietly("_hasUrlSegments",$activeSegments);
-		//$page->setQuietly("_hasGet",$activeGet);
-		//$page->setQuietly("_hasRequestMethod",$activeRequestMethod);
-
-
-		//$hypermedia = new Hypermedia;
-
-		//$possiblePaths = $hypermedia->possibleTemplateFilesFromSegments($page->template->name,$page->get("_hasUrlSegments"));
-
-		
-		$page->setQuietly("_hm",$hm);
-		$page->template->setFilename($hm->template_path);
-
-		//dumpBig($page);
-		
-		/*
-
-		
-		
-
-		
-		if($page->xcf_custom_template){
-			$template_arr = explode(">",$page->xcf_custom_template);
-			if($template_arr[0]=="webengine"){
-				$custom_template_path = $this->config->paths->root."site/modules/webengine/templates/page_templates/".$template_arr[1];
-			}
-			elseif($template_arr[0]=="site"){
-				$custom_template_path = $this->config->paths->root."sites/pwmd.local/templates/".$template_arr[1];
-			}
-
-			if(file_exists($custom_template_path)){
-				$page->template->setFilename($custom_template_path);
-			}
-			
-		}
-
-		elseif(file_exists($site_spec_template_path)){
-			$page->template->setFilename($site_spec_template_path);
-		}
-		elseif(file_exists($webengine_spec_template_path)){
-			$page->template->setFilename($webengine_spec_template_path);
-		}
-
-		*/
-		
-	}
 
 	/**
 	 * Hook to Page::hello

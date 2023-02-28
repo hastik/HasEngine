@@ -98,6 +98,23 @@ class HypermediaPage extends Page {
         return $newResource;
     }
 
+    public function newSourceFromRouterAndPage($router,$page){        
+        
+        $page = clone $page;
+
+        $page_url = $page->url;
+
+        $router_arr = explode("/",$router);
+
+        $router_str = "r-".implode("_",$router_arr);
+
+        $input_url = $page_url."/".$router_str;
+
+        $newResource =  new HypermediaObject($page,$input_url,$this->resource);
+
+        return $newResource;
+    }
+
 
     public function newResource($name = null){
         $newResource = new HypermediaObject();

@@ -3,10 +3,20 @@
 use Processwire\HypermediaResource;
 
  ?>
-<script src="https://unpkg.com/htmx.org@1.8.5"></script>
+
+<?php
+
+    if(!isset($page->resource)){
+        dump($page);
+    }
+
+?>
+
+
+
+
 <?php
     
-   
     $limit = $page->resource->getVal('limit',10);
     $min_count = $page->resource->getVal("count",70);
     $order = $page->resource->getVal("sort","id");
@@ -19,6 +29,20 @@ use Processwire\HypermediaResource;
 
 <h3>Tabulka </h3>
 
+<style>
+
+
+    .htmx-settling tr.deactivate td {
+    background: rgba(75,191,115,.175);
+  }
+  .edited td {
+    background: darkseagreen;
+  }
+  tr td {
+    transition: all 0.8s;
+  }
+
+</style>
 
 
 <h4>Počet položek</h4>
@@ -29,7 +53,7 @@ use Processwire\HypermediaResource;
     $filter_count = array();
     $filter_count = array(5,10,20,50);
     $name = "limit";
-    $target = "#tableincludes";
+    $target = "table-".$page->resource->hash;
     $select = "#tableincludes";
 
     $options = array();
@@ -41,7 +65,7 @@ use Processwire\HypermediaResource;
         $live_link = $resource->update()->getLiveUrl();
         
         $casted_link = $resource->getCastedUrl();
-        $options[]= $page->hxLink($value,$live_link,$casted_link,"#tableincludes","#tableincludes");
+        $options[]= $page->hxLink($value,$live_link,$casted_link,"#".$target,"#".$target);
     }
 
 
@@ -78,7 +102,7 @@ use Processwire\HypermediaResource;
     
 </div>
 
-<table role="grid" id="tableincludes">
+<table role="grid" id="<?=$target?>">
 
     <thead>
         <tr>
