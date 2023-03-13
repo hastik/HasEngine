@@ -453,8 +453,8 @@ class HypermediaObject {
             return $this->master_data["get"][$this->hash][$name];
         }
         
-        if(isset($this->data["query"][$this->hash][$name])){
-            return $this->data["query"][$this->hash][$name];
+        if(isset($this->data["query"][$name])){
+            return $this->data["query"][$name];
         }
 
         if(isset($this->data["get"][$this->hash][$name])){

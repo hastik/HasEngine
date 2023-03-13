@@ -281,3 +281,6 @@
 2023-02-10 07:45:06	admin	http://pwx.local/processwire/module/?reset=2	Saved module info caches
 2023-02-20 09:14:06	admin	http://pwx.local/processwire/setup/field/edit?id=99	Installed module 'InputfieldPageAutocomplete'
 2023-02-20 09:14:06	admin	http://pwx.local/processwire/setup/field/edit?id=99	Saved module info caches
+2023-03-06 09:29:41	admin	http://pwx.local/processwire/module/	Installed module 'InputfieldRepeater'
+2023-03-06 09:29:41	admin	http://pwx.local/processwire/module/	Installed module 'FieldtypeRepeater'
+2023-03-06 09:29:42	admin	http://pwx.local/processwire/module/	Saved module info caches

@@ -10,6 +10,7 @@ include "HypermediaObject.php";
 include "HypermediaManager.php";
 include "openai/autoload.php";
 include "HasOpenAI.php";
+include "nette/vendor/autoload.php";
 
 //include "shypermedia.php";
 
@@ -117,7 +118,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		// https://processwire.com/blog/posts/pw-3.0.173/
 		
 		// This example outputs "Hello World" when you access the URL /hello/world/
-		$this->addHook('/hello/world/', function(HookEvent $event) {
+		$this->addHook('/hello/andy', function(HookEvent $event) {
 			return __('Hello World');
 		});
 		

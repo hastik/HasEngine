@@ -11,7 +11,7 @@
 
         function fetch($prompt){
 
-            $client = OpenAI::client('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');
+            $client = OpenAI::client('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');
           
             $result = $client->completions()->create([
                 'model' => 'text-davinci-003',

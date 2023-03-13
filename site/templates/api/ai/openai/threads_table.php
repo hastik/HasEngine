@@ -1,8 +1,11 @@
-<?php namespace ProcessWirel;
+<?php namespace ProcessWire;
 
     $limit = $page->resource->getVal('limit',10);
     $query = "template='chat',limit=$limit";
     $threats = $page->children($query);
+    if(!$threats->count()){
+        $threats = wire("pages")->find("template=chat");
+    }
 
     $target = "table-".$page->resource->hash;
 ?>

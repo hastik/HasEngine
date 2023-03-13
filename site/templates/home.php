@@ -58,6 +58,6 @@
 
 
 <div class="included">
-	<?php include_once 'home_test.php'; ?>
+	"Toto je home stránka"
 </div>
 
