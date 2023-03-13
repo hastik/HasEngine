@@ -284,3 +284,5 @@
 2023-03-06 09:29:41	admin	http://pwx.local/processwire/module/	Installed module 'InputfieldRepeater'
 2023-03-06 09:29:41	admin	http://pwx.local/processwire/module/	Installed module 'FieldtypeRepeater'
 2023-03-06 09:29:42	admin	http://pwx.local/processwire/module/	Saved module info caches
+2023-03-13 13:43:33	admin	http://pwx.local/app/games/test/gameplays/test/r-gm_hq?temp=array-1	Failed to init module: TracyDebugger - Tracy\DeferredContent::sendAssets() called after some output has been sent. Try Tracy\OutputDebugger to find where output started.
+2023-03-13 13:43:59	admin	http://pwx.local/app/games/test/gameplays/test/r-gm_hq?temp=array-1	Failed to init module: TracyDebugger - Tracy\DeferredContent::sendAssets() called after some output has been sent. Try Tracy\OutputDebugger to find where output started.

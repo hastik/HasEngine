@@ -1,0 +1,10 @@
+<div>
+
+    {* this is a comment *}
+    <ul n:if="$items">                {* n:if is n:atribut *}
+    {foreach $items as $item}         {* tag representing foreach loop *}
+        <li>{$item|capitalize}</li>   {* tag that prints a variable with a filter *}
+    {/foreach}       
+    </ul>                 {* end of cycle *}
+
+</div>

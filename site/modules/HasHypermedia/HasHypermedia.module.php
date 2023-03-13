@@ -1,5 +1,5 @@
 <?php namespace ProcessWire;
-
+use Latte;
 
 
 include "Templater/Templater.php";
@@ -40,6 +40,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 
 
 	public $hypermedia;
+	public $latte;
 
 	/**
 	 * Construct
@@ -51,6 +52,9 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		parent::__construct();
 		$this->set('helloMessage', 'Hypermedia module is greeting you!');
 		$this->set('useHello', 0);
+
+		$this->latte = new Latte\Engine;
+		$this->latte->setTempDirectory(wire("config")->paths->tmp."latte");
 		// you may remove this method if you do not need it
 	}
 
@@ -69,6 +73,7 @@ class HasHypermedia extends WireData implements Module, ConfigurableModule {
 		//$this->hypermedia = new Hypermedia;
 		$openai = new HasOpenAI();
 		$this->wire()->set("openai", $openai);	
+		$this->wire()->set("latte", $this->latte);	
 
 		// Add a hook after the $pages->save, to issue a notice every time a page is saved
 		$this->pages->addHookAfter('saved', $this, 'pageSaveHookExample'); 

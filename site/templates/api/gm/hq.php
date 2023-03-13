@@ -227,8 +227,7 @@
                                         }
                                     }
 
-                                    bd($inputs);
-                                    bd($outputs);
+                                    
                                 ?>
 
 
@@ -532,6 +531,23 @@
 <audio id="audio" controls autoplay>
                         <source src="/site/templates/bg.mp3" type="audio/mp3">
                     </audio>
+
+                    <?php 
+                        bd(wire("latte"));
+                        $latte = wire("latte");
+                        // render to output
+
+                        $items = array("pondeli","utery","streda");                        
+                        $params = array("items" => $items);
+                        // or render to variable
+                        
+                        //bd(wire("urls")->tmp."latte");
+                        //bd(is_dir(wire("urls")->tmp."latte"));
+
+                        $output = $latte->renderToString('template.latte', $params);
+                        bd($output);
+                        echo $output;
+                    ?>
 
 </body>
 
