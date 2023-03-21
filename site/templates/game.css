@@ -192,3 +192,24 @@ html{
     }
   }
   
+
+  .buildingcard{
+    background: rgb(242,235,211);
+    background: radial-gradient(circle, rgba(242,235,211,1) 0%, rgba(235,221,179,1) 100%);
+    font-family: 'Cookie', cursive;
+    border: 4px solid #7A5740;
+  }
+
+  .buildingcard-inner{
+    border: 10px solid rgba(255,255,255,0.3);
+    padding: 1.2rem 2rem;
+  }
+
+  .buildingcard .name{
+    text-align: center;
+    font-size: 2.2rem;
+  }
+
+  .buildingcard .image img{
+    height: 12rem;
+  }

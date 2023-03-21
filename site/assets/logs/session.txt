@@ -28,3 +28,7 @@
 2023-03-09 08:06:33	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
 2023-03-13 13:06:42	?	?	User 'admin' - Session timed out (session older than 86400 seconds) (IP: 127.0.0.1)
 2023-03-13 13:22:14	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
+2023-03-15 07:42:59	?	?	User 'admin' - Session timed out (session older than 86400 seconds) (IP: 127.0.0.1)
+2023-03-17 08:24:23	admin	http://pwx.local/processwire/login/	Successful login for 'admin'
+2023-03-20 13:30:40	?	?	User 'admin' - Session timed out (session older than 86400 seconds) (IP: 127.0.0.1)
+2023-03-20 13:30:46	admin	http://pwx.local/processwire/login/	Successful login for 'admin'

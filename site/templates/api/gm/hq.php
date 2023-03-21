@@ -167,6 +167,9 @@
 <head>
 
     <link href="/site/templates/game.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cookie&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/htmx.org@1.8.5"></script>
     <script src="https://unpkg.com/hyperscript.org@0.9.7"></script>
@@ -208,45 +211,47 @@
                 <div class="another">
                     <div class="buildings">
                     <?php foreach($buildings as $building):?>
-                        <div class="building boxshadow gallery">
-                            <span class="image"><img src="<?=$building->gm_resource_ref->gm_image->url?>"></span>
-                            <span class="name"><?=$building->gm_resource_ref->title?></span>
-                            <span class="val"><?=$building->gm_num?></span>
-                            <div class="process">
-                                <?php 
-                                    $origin = $building->gm_resource_ref;                                    
-                                    $inputs = array();
-                                    $outputs = array();
-                                    foreach($origin->gm_production as $cost){                                        
-                                        //bd($cost);
-                                        if($cost->gm_num > 0){
-                                            $outputs[] = ["num" => abs($cost->gm_num),"src" => $cost->gm_resource_ref->gm_image->url];
+                        <div class="buildingcard boxshadow gallery ">
+                            <div class="buildingcard-inner">
+                                <div class="name"><?=$building->gm_resource_ref->title?></div>
+                                <div class="image"><img src="<?=$building->gm_resource_ref->gm_image->url?>"></div>                            
+                                <div class="val"><?=$building->gm_num?></div>
+                                <div class="process">
+                                    <?php 
+                                        $origin = $building->gm_resource_ref;                                    
+                                        $inputs = array();
+                                        $outputs = array();
+                                        foreach($origin->gm_production as $cost){                                        
+                                            //bd($cost);
+                                            if($cost->gm_num > 0){
+                                                $outputs[] = ["num" => abs($cost->gm_num),"src" => $cost->gm_resource_ref->gm_image->url];
+                                            }
+                                            if($cost->gm_num < 0){
+                                                $inputs[] = ["num" => abs($cost->gm_num),"src" => $cost->gm_resource_ref->gm_image->url];
+                                            }
                                         }
-                                        if($cost->gm_num < 0){
-                                            $inputs[] = ["num" => abs($cost->gm_num),"src" => $cost->gm_resource_ref->gm_image->url];
-                                        }
-                                    }
 
-                                    
-                                ?>
+                                        
+                                    ?>
 
 
-                                <div class="inputs">
+                                    <div class="inputs">
 
-                                <?php foreach($inputs as $input): ?>
-                                    <?php for($i=1;$i<=$input["num"];$i++): ?>
-                                            <img src="<?=$input["src"]?>">
-                                    <?php endfor;?>
-                                <?php endforeach;?>
-                                </div>
-
-                                <div class="outputs">
-                                <?php foreach($outputs as $input): ?>
-                                    <?php for($i=1;$i<=$input["num"];$i++): ?>
-                                            <img src="<?=$input["src"]?>">
-                                    <?php endfor;?>
-                                <?php endforeach;?>
+                                    <?php foreach($inputs as $input): ?>
+                                        <?php for($i=1;$i<=$input["num"];$i++): ?>
+                                                <img src="<?=$input["src"]?>">
+                                        <?php endfor;?>
+                                    <?php endforeach;?>
                                     </div>
+
+                                    <div class="outputs">
+                                    <?php foreach($outputs as $input): ?>
+                                        <?php for($i=1;$i<=$input["num"];$i++): ?>
+                                                <img src="<?=$input["src"]?>">
+                                        <?php endfor;?>
+                                    <?php endforeach;?>
+                                        </div>
+                                </div>
                             </div>
                             
                         </div>

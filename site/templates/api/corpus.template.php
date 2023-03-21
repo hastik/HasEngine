@@ -56,6 +56,13 @@
                                             <li class="nav-li"> <a href="/app/ai/openai/simple-test/r-ai_openai_dummytest" class="nav-li-a">Simple test</a></li>
                                     </ul>
                                 </li>
+                                <li class="nav-li"> <a href="/" class="nav-li-a">I6</a>
+                                    <ul class="navul">
+                                            <li class="nav-li"> <a href="/app/i6/products/r-i6_products" class="nav-li-a">Produkty</a></li>
+                                            <li class="nav-li"> <a href="/app/i6/categories/r-i6_categories_dashboard" class="nav-li-a">Virtuální stromy</a></li>
+                                            <li class="nav-li"> <a href="/app/i6/parameters/r-i6_parameters" class="nav-li-a">Parametry</a></li>
+                                    </ul>
+                                </li>
                                 <li class="nav-li hide"><a href="/" class="nav-li-a">AI</a></li>
                                 <li class="nav-li hide"><a href="/" class="nav-li-a">I6</a></li>
                             </ul>
