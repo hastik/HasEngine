@@ -30,9 +30,9 @@
                             
                             <ul class="navul">                                
                                 <li class="nav-li"> <a href="/" class="nav-li-a">Home</a> </li>
-                                <li class="nav-li hide"> <a href="/" class="nav-li-a">Testing</a>
+                                <li class="nav-li "> <a href="/" class="nav-li-a">Testing</a>
                                     <div class="subnav">
-                                    <ul class="navul hide">
+                                    <ul class="navul ">
                                         <li class="nav-li"> <span class="navtitle">Odkazy</span></li>
                                         <li class="nav-li"> <a href="/novy/r-app_testing_dashboard-all" class="nav-li-a">Dashboard SSR</a> </li>
                                         <li class="nav-li"> <a href="/test/r-app_testing_table-included" class="nav-li-a">Table</a> </li>

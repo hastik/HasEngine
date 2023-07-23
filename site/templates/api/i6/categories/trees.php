@@ -1,9 +1,16 @@
 <?php namespace ProcessWire;
 
     $query = "template='category',role_text='base'";
-    $trees = $page->children($query);
-    
+    $trees = $page->children($query);    
     $target = "table-".$page->resource->hash;
+    $template = wire("latte");                    // render to output
+    $params = array();                            
+    $params = array("items" => $items);
+    $output = $template->renderToString('trees.latte', $params);
+    
+    echo $output;
+
+    exit;
 ?>
 
 

@@ -8,7 +8,7 @@ include "HypermediaObjectConstructor.php";
 include "HypermediaCaster.php";
 include "HypermediaObject.php";
 include "HypermediaManager.php";
-include "openai/autoload.php";
+include "open/vendor/autoload.php";
 include "HasOpenAI.php";
 include "nette/vendor/autoload.php";
 

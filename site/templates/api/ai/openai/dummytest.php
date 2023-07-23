@@ -14,10 +14,11 @@
         dump(wire("input")->post("message"));
 
         $openai = new HasOpenAI();
-        $result = $openai->fetch(wire("input")->post("message"));
-        dump($result);
+        $result = $openai->fetchChat(wire("input")->post("message"));
+        dump($result->toArray());
+        //dump($result->text);
 
-        dump($result['choices'][0]['text']); // an open-source, widely-used, server-side scripting language.
+        dump($result['choices'][0]['message']["content"]); // an open-source, widely-used, server-side scripting language.
 
         /*$p = wire('pages')->get(wire("input")->post("pageid"));
         $p->status = Page::statusUnpublished;

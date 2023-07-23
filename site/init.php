@@ -2,6 +2,27 @@
 
 if(!defined("PROCESSWIRE")) die();
 
+include_once('./routes.php');
+
+
+
+class HmRouter {
+
+    private $router = array();
+
+    public function registerRoute($string,$value){
+        $this->router[$string] = $value;
+    }
+
+    public function get($string){
+        return isset($this->router[$string]) ? $this->router[$string] : null;
+    }
+
+}
+
+wire()->set("appr",new HmRouter);
+wire("appr")->registerRoute("products-table","/app/i6/products/r-i6_products-table");
+
 /** @var ProcessWire $wire */
 
 /**

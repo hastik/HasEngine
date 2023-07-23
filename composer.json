@@ -15,7 +15,8 @@
   ],
   "require": {
     "php": ">=5.5",
-    "ext-gd": "*"
+    "ext-gd": "*",
+    "openai-php/client": "^0.6.4"
   },
   "autoload": {
     "files": [ "wire/core/ProcessWire.php" ]
